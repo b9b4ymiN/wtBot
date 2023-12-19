@@ -3,7 +3,7 @@ const { Connection, programs } = require("@metaplex/js");
 const {
   metadata: { Metadata },
 } = programs;
-const searchAddress = "Ez2U27TRScksd6q7xoVgX44gX9HAjviN2cdKAL3cFBFE"; //example 'pow'
+const searchAddress = "6RJTHCa7k1HTkRopp44JU1UjFftYpdAC2QZLVjvK5vWT"; //example 'pow'
 
 const endpoint =
   "https://quiet-attentive-hexagon.solana-mainnet.quiknode.pro/208df33f2dae1636a4bd50fdb510d37e4171d6b2/";
@@ -20,6 +20,8 @@ const txJup =
 const tx_2way =
   "2witM53CsyubKBLrBhK4gAxPsuXY1n2KCcqo3WwgVkYjykaYG6ALBDH42V4XyBQEwVq9z4H5jLRCLAepYKu65m2o"; // Convert without SOL
 //const searchAddress = 'xxxxxxqSkjrSvY1igNYjwcw5f9QskeLRKYEmJ1MezhB'; //example 'pow'
+
+const way2token = "3GMdGH9YdfgMq6dqPp6tz3v5XtQqWEuh2r132w9v7R3c9sMUUftnQjy8eek9iKY2ERJgmiJ11ZHPUR1ajRt8ChQb"
 
 const getMetadata = async (tokenPubKey) => {
   try {
@@ -51,10 +53,10 @@ const getTransaction = async (txn) => {
   let { preBalances, postBalances } = transactionDetail.meta;
   console.log(
     `   ${"Item".padEnd(8)} ` +
-      `${"owner".padEnd(45)} ` +
-      `${"mint".padEnd(45)} ` +
-      `${"tokenChange".padEnd(45)} ` +
-      `${"post".padEnd(45)} `
+    `${"owner".padEnd(45)} ` +
+    `${"mint".padEnd(45)} ` +
+    `${"tokenChange".padEnd(45)} ` +
+    `${"post".padEnd(45)} `
   );
 
   let preToken_acc = preTokenBalances.filter(
@@ -70,32 +72,33 @@ const getTransaction = async (txn) => {
         postToken_acc[i].uiTokenAmount.uiAmount -
         account.uiTokenAmount.uiAmount;
 
-      let data_token = null; // await getMetadata(account.mint);
-      //console.log("account:", account);
+      if (tokenChange != 0) {
+        let data_token = null; // await getMetadata(account.mint);
+        //console.log("account:", account);
 
-      console.log(
-        `   ${i.toString().padEnd(8)} ` +
+        console.log(
+          `   ${i.toString().padEnd(8)} ` +
           `${account.owner.padEnd(45)} ` +
-          `${
-            data_token != null
-              ? data_token.name.padEnd(45)
-              : account.mint.padEnd(45)
+          `${data_token != null
+            ? data_token.name.padEnd(45)
+            : account.mint.padEnd(45)
           }  ` +
           `${(tokenChange === 0 ? "-" : tokenChange.toFixed(2)).padEnd(45)} ` +
           `${(postToken_acc[i].uiTokenAmount.uiAmount
             ? postToken_acc[i].uiTokenAmount.uiAmount.toFixed(2)
             : "-"
           ).padEnd(45)} `
-      );
+        );
+      }
     });
   }
 
   console.log("");
   console.log(
     `   ${"Item".padEnd(8)} ` +
-      `${"owner".padEnd(45)} ` +
-      `${"tokenChange".padEnd(45)} ` +
-      `${"post".padEnd(45)} `
+    `${"owner".padEnd(45)} ` +
+    `${"tokenChange".padEnd(45)} ` +
+    `${"post".padEnd(45)} `
   );
 
   console.log("postBalances : ", postBalances);
@@ -106,11 +109,10 @@ const getTransaction = async (txn) => {
         (postBalances[i] - preBalances[i]) / solanaWeb3.LAMPORTS_PER_SOL;
       console.log(
         `   ${i.toString().padEnd(8)} ` +
-          `${account.pubkey.toString()} ` +
-          `${(solChange === 0 ? "-" : solChange.toFixed(2)).padEnd(45)} ` +
-          `${
-            "◎ " + (postBalances[i] / solanaWeb3.LAMPORTS_PER_SOL).toFixed(3)
-          } `
+        `${account.pubkey.toString()} ` +
+        `${(solChange === 0 ? "-" : solChange.toFixed(2)).padEnd(45)} ` +
+        `${"◎ " + (postBalances[i] / solanaWeb3.LAMPORTS_PER_SOL).toFixed(3)
+        } `
       );
     });
 
@@ -121,4 +123,4 @@ const getTransaction = async (txn) => {
   console.log("-".repeat(100));
 };
 
-getTransaction(txJup);
+getTransaction('2m2vHPDHKsYu99Bo6j4KYQNPePGBJwVeVQMfUDdcA5nPhi9zY9N1MmvDDMzKiA1omy1wRPUoVaHhVkC6ZsKf9oAZ');

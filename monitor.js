@@ -1,5 +1,6 @@
 const solanaWeb3 = require("@solana/web3.js");
 const { programs } = require("@metaplex/js");
+const { sendData, lineSendMessage } = require('./lineNoti')
 const {
   metadata: { Metadata },
 } = programs;
@@ -7,7 +8,7 @@ const {
 const endpoint =
   "https://quiet-attentive-hexagon.solana-mainnet.quiknode.pro/208df33f2dae1636a4bd50fdb510d37e4171d6b2/";
 const solanaConnection = new solanaWeb3.Connection(endpoint);
-const searchAddress = "588p6rkkdYrd7ktz4Pw85KifVdvercWQBjq541UcaGd1";
+const searchAddress = "GSE6vfr6vws493G22jfwCU6Zawh3dfvSYXYQqKhFsBwe";
 
 const getTokenMeta = async (tokenPubKey) => {
   try {
@@ -76,9 +77,11 @@ const getSPLInformation = async (
           let tokenChange =
             postToken_acc[i].uiTokenAmount.uiAmount -
             account.uiTokenAmount.uiAmount;
-          return new Promise((resolve) => {
-            resolve({ token: data_token, tokenChange });
-          });
+          if (tokenChange != 0) {
+            return new Promise((resolve) => {
+              resolve({ token: data_token, tokenChange, address: account.mint });
+            });
+          }
         })
       );
       return token_list;
@@ -88,6 +91,7 @@ const getSPLInformation = async (
     return null;
   }
 };
+
 
 const getTransaction = async (txn) => {
   //setting data to export information
@@ -168,14 +172,11 @@ const getTransaction = async (txn) => {
   return data_export;
 };
 
-const sleep = async (ms) => {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-};
+
 
 (async () => {
   const pubKey = new solanaWeb3.PublicKey(searchAddress);
+  console.log('start wallet : ', searchAddress)
   solanaConnection.onAccountChange(
     new solanaWeb3.PublicKey(pubKey),
     async (updatedAccountInfo, context) => {
@@ -187,7 +188,8 @@ const sleep = async (ms) => {
         console.log("signatures : ", x.signature);
       });
       let dataE = await getTransaction(signatures[0].signature);
-      console.log("data : ", dataE);
+      let dataSend = await sendData('pow', dataE);
+      lineSendMessage(dataSend);
     },
     "finalized"
   );
