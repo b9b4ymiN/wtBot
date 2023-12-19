@@ -1,13 +1,13 @@
 const solanaWeb3 = require("@solana/web3.js");
-const { Connection, programs } = require("@metaplex/js");
+const { programs } = require("@metaplex/js");
 const {
   metadata: { Metadata },
 } = programs;
 
-const searchAddress = "ETnWxeLsKBjfjjcXvG9GukQsTZE6cGDJirAWWGQ62RWQ";
 const endpoint =
   "https://quiet-attentive-hexagon.solana-mainnet.quiknode.pro/208df33f2dae1636a4bd50fdb510d37e4171d6b2/";
 const solanaConnection = new solanaWeb3.Connection(endpoint);
+const searchAddress = "588p6rkkdYrd7ktz4Pw85KifVdvercWQBjq541UcaGd1";
 
 const getTokenMeta = async (tokenPubKey) => {
   try {
@@ -113,8 +113,6 @@ const getTransaction = async (txn) => {
     postBalances,
     searchAddress
   );
-  console.log("sol => ", sol_data);
-
   //getting SPL balance change
   let { preTokenBalances, postTokenBalances } = transactionDetail.meta;
   let SPL_data = await getSPLInformation(
@@ -122,8 +120,6 @@ const getTransaction = async (txn) => {
     postTokenBalances,
     searchAddress
   );
-
-  console.log("token => ", SPL_data);
   if (sol_data != null && SPL_data != null) {
     data_export.model = "swapping";
 
@@ -172,6 +168,27 @@ const getTransaction = async (txn) => {
   return data_export;
 };
 
-getTransaction(
-  "2wPkqjtXGuAFTLX9rpw3bMJ5r93kRc4vBuYyLbmxtDsp4Z7mNCC2A4zXbVMGCRCQPY9e7YJSqXAerEZ65c5WV1xh"
-);
+const sleep = async (ms) => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+};
+
+(async () => {
+  const pubKey = new solanaWeb3.PublicKey(searchAddress);
+  solanaConnection.onAccountChange(
+    new solanaWeb3.PublicKey(pubKey),
+    async (updatedAccountInfo, context) => {
+      const signatures = await solanaConnection.getSignaturesForAddress(
+        pubKey,
+        { limit: 1 }
+      );
+      signatures.forEach((x) => {
+        console.log("signatures : ", x.signature);
+      });
+      let dataE = await getTransaction(signatures[0].signature);
+      console.log("data : ", dataE);
+    },
+    "finalized"
+  );
+})();
