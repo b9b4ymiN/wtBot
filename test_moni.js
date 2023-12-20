@@ -9,7 +9,7 @@ const endpoint =
   "https://quiet-attentive-hexagon.solana-mainnet.quiknode.pro/208df33f2dae1636a4bd50fdb510d37e4171d6b2/";
 const solanaConnection = new solanaWeb3.Connection(endpoint);
 const lstWallet = require("./wallet.json");
-
+const wallet_Fip = "FLiPggWYQyKVTULFWMQjAk26JfK5XRCajfyTmD5weaZ7";
 const getTokenMeta = async (tokenPubKey) => {
   try {
     const addr = await Metadata.getPDA(tokenPubKey);
@@ -30,9 +30,11 @@ const getSOLInformation = async (
 ) => {
   try {
     //Getting transaction change with wallet
+    //Getting transaction change with wallet
     let kcKeys = transactionDetail.transaction.message.accountKeys.filter(
       (x) => x.pubkey.toString() == wallet
     );
+
     //Getting transaction check with wallet
     if (kcKeys != null && kcKeys.length != 0) {
       //Calculate sol change
@@ -68,6 +70,8 @@ const getSPLInformation = async (
     let postToken_acc = postTokenBalances.filter(
       (x) => x.owner.toString() == wallet
     );
+
+
 
     //Getting transaction check with wallet
     if (preToken_acc != null && preToken_acc.length != 0) {
@@ -127,84 +131,98 @@ const getTransaction = async (txn, wallet) => {
   //getting and setting transaction time
   const date = convertTZ(new Date(), "Asia/Jakarta");
   data_export.time = date;
+
+  let chkFip = transactionDetail.transaction.message.accountKeys.filter(
+    (x) => x.pubkey.toString() == wallet_Fip
+  );
+  console.log('chkFip : ', chkFip != null ? chkFip.length : 0);
+
   //setting status
   transactionDetail.meta.err
     ? (data_export.status = "Failed")
     : (data_export.status = "Success");
-  //getting sol balance information
-  let { preBalances, postBalances } = transactionDetail.meta;
-  let sol_data = await getSOLInformation(
-    transactionDetail,
-    preBalances,
-    postBalances,
-    wallet
-  );
-  //getting SPL balance change
-  let { preTokenBalances, postTokenBalances } = transactionDetail.meta;
-  let SPL_data = await getSPLInformation(
-    preTokenBalances,
-    postTokenBalances,
-    wallet
-  );
+  //check status : fail
+  if (data_export.status != "Failed" && (chkFip == null || chkFip.length == 0)) {
+    //getting sol balance information
+    let { preBalances, postBalances } = transactionDetail.meta;
+    let sol_data = await getSOLInformation(
+      transactionDetail,
+      preBalances,
+      postBalances,
+      wallet
+    );
+    //getting SPL balance change
+    let { preTokenBalances, postTokenBalances } = transactionDetail.meta;
+    let SPL_data = await getSPLInformation(
+      preTokenBalances,
+      postTokenBalances,
+      wallet
+    );
+    if (sol_data != null && SPL_data != null) {
+      data_export.model = "swapping";
 
-  console.log("SPL_data ", SPL_data);
+      if (sol_data.swap_type == 0) {
+        //swap with out SOL
+        let inToken = SPL_data[0];
+        let outToken = SPL_data[1];
+        if (Math.sign(SPL_data[0].tokenChange) != -1) {
+          inToken = SPL_data[1];
+          outToken = SPL_data[0];
+        }
 
-  if (sol_data != null && SPL_data != null) {
-    data_export.model = "swapping";
+        data_export.tokenIn = inToken.token.name;
+        data_export.qtyIn = inToken.tokenChange;
+        data_export.tokenIn_info = inToken.token;
+        data_export.tokenIn_info.address = inToken.address;
 
-    if (sol_data.swap_type == 0) {
-      //swap with out SOL
-      let inToken = SPL_data[0];
-      let outToken = SPL_data[1];
-      if (Math.sign(SPL_data[0].tokenChange) != -1) {
-        inToken = SPL_data[1];
-        outToken = SPL_data[0];
-      }
-
-      data_export.tokenIn = inToken.token.name;
-      data_export.qtyIn = inToken.tokenChange;
-      data_export.tokenIn_info = inToken.token;
-      data_export.tokenIn_info.address = inToken.address;
-
-      data_export.tokenOut = outToken.token.name;
-      data_export.qtyOut = outToken.tokenChange;
-      data_export.tokenOut_info = outToken.token;
-      data_export.tokenOut_info.address = outToken.address;
-    } else {
-      //Swap with SOL
-      if (Math.sign(sol_data.solChange) == -1) {
-        //Input == SOL
-        //Output == token
-        data_export.tokenIn = "SOL";
-        data_export.qtyIn = sol_data.solChange;
-        data_export.tokenIn_info = null;
-
-        data_export.tokenOut = SPL_data[0].token.name;
-        data_export.qtyOut = SPL_data[0].tokenChange;
-        data_export.tokenOut_info = SPL_data[0].token;
-        data_export.tokenOut_info.address = SPL_data[0].address;
+        data_export.tokenOut = outToken.token.name;
+        data_export.qtyOut = outToken.tokenChange;
+        data_export.tokenOut_info = outToken.token;
+        data_export.tokenOut_info.address = outToken.address;
       } else {
-        //Input == token
-        //Output == SOL
-        data_export.tokenIn = SPL_data[0].token.name;
-        data_export.qtyIn = SPL_data[0].tokenChange;
-        data_export.tokenIn_info = SPL_data[0].token;
-        data_export.tokenIn_info.address = SPL_data[0].address;
+        //Swap with SOL
+        if (Math.sign(sol_data.solChange) == -1) {
+          //Input == SOL
+          //Output == token
+          data_export.tokenIn = "SOL";
+          data_export.qtyIn = sol_data.solChange;
+          data_export.tokenIn_info = null;
 
-        data_export.tokenOut = "SOL";
-        data_export.qtyOut = sol_data.solChange;
-        data_export.tokenOut_info = null;
+          data_export.tokenOut = SPL_data[0].token.name;
+          data_export.qtyOut = SPL_data[0].tokenChange;
+          data_export.tokenOut_info = SPL_data[0].token;
+          data_export.tokenOut_info.address = SPL_data[0].address;
+        } else {
+          //Input == token
+          //Output == SOL
+          data_export.tokenIn = SPL_data[0].token.name;
+          data_export.qtyIn = SPL_data[0].tokenChange;
+          data_export.tokenIn_info = SPL_data[0].token;
+          data_export.tokenIn_info.address = SPL_data[0].address;
+
+          data_export.tokenOut = "SOL";
+          data_export.qtyOut = sol_data.solChange;
+          data_export.tokenOut_info = null;
+        }
       }
     }
-  }
 
-  return data_export;
+    return data_export;
+  } else if (chkFip != null && chkFip.length != 0) {
+    console.error("txn : play_flipgg transaction....");
+    return null;
+  }
+  else {
+    console.error("txn : faild !!");
+    return null;
+  }
 };
+
 
 (async () => {
   let dataE = await getTransaction(
-    "qfPr7ystfm3qEzMMWMCTJcKand5PYxL8ueHNez3Zz52wqNb9ZJtXG4WsNHSJ5D5Cx86bBtdoLWrvZqGVKvEYfsG",
-    "HenkBtb3i6qFxxrsKoeY7ge6fY96ofhsK84gxkBUKaNo"
+    "3yz2ffioxNQhmQRKUwDrDnCAo6gSadeMEx9Z3YTbG1EPa9QQ9CTddXuxkXdVGbKFD4cC4P2y8dP5YanuzaaRDJyz",
+    "4CX53LQNwFs3tyRFfwkMxsPV8daao1zCiGQjMMAkKSqx"
   );
   console.log("E", dataE);
   if (dataE != null) {

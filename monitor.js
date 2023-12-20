@@ -10,6 +10,8 @@ const endpoint =
 const solanaConnection = new solanaWeb3.Connection(endpoint);
 const lstWallet = require("./wallet.json");
 
+const wallet_Fip = "FLiPggWYQyKVTULFWMQjAk26JfK5XRCajfyTmD5weaZ7";
+
 const getTokenMeta = async (tokenPubKey) => {
   try {
     const addr = await Metadata.getPDA(tokenPubKey);
@@ -128,12 +130,18 @@ const getTransaction = async (txn, wallet) => {
   //getting and setting transaction time
   const date = convertTZ(new Date(), "Asia/Jakarta");
   data_export.time = date;
+
+  let chkFip = transactionDetail.transaction.message.accountKeys.filter(
+    (x) => x.pubkey.toString() == wallet_Fip
+  );
+  //console.log('chkFip : ', chkFip != null ? chkFip.length : 0);
+
   //setting status
   transactionDetail.meta.err
     ? (data_export.status = "Failed")
     : (data_export.status = "Success");
   //check status : fail
-  if (data_export.status != "Failed") {
+  if (data_export.status != "Failed" && (chkFip == null || chkFip.length == 0)) {
     //getting sol balance information
     let { preBalances, postBalances } = transactionDetail.meta;
     let sol_data = await getSOLInformation(
@@ -199,7 +207,11 @@ const getTransaction = async (txn, wallet) => {
     }
 
     return data_export;
-  } else {
+  } else if (chkFip != null && chkFip.length != 0) {
+    console.error("txn : play_flipgg transaction....");
+    return null;
+  }
+  else {
     console.error("txn : faild !!");
     return null;
   }
