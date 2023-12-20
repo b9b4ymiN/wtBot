@@ -128,7 +128,9 @@ const getTransaction = async (txn, wallet) => {
     maxSupportedTransactionVersion: 0,
   });
   //getting and setting transaction time
-  const date = convertTZ(new Date(), "Asia/Jakarta");
+  const date = convertTZ(new Date(transactionDetail.blockTime * 1000), "Asia/Jakarta").toISOString().
+    replace(/T/, ' ').      // replace T with a space
+    replace(/\..+/, '');
   data_export.time = date;
 
   let chkFip = transactionDetail.transaction.message.accountKeys.filter(
