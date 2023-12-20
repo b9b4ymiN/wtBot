@@ -107,7 +107,6 @@ const getSPLInformation = async (
     return null;
   }
 };
-
 function convertTZ(date, tzString) {
   return new Date(
     (typeof date === "string" ? new Date(date) : date).toLocaleString("en-US", {
@@ -132,107 +131,85 @@ const getTransaction = async (txn, wallet) => {
   transactionDetail.meta.err
     ? (data_export.status = "Failed")
     : (data_export.status = "Success");
-  //check status : fail
-  if (data_export.status != "Failed") {
-    //getting sol balance information
-    let { preBalances, postBalances } = transactionDetail.meta;
-    let sol_data = await getSOLInformation(
-      transactionDetail,
-      preBalances,
-      postBalances,
-      wallet
-    );
-    //getting SPL balance change
-    let { preTokenBalances, postTokenBalances } = transactionDetail.meta;
-    let SPL_data = await getSPLInformation(
-      preTokenBalances,
-      postTokenBalances,
-      wallet
-    );
-    if (sol_data != null && SPL_data != null) {
-      data_export.model = "swapping";
+  //getting sol balance information
+  let { preBalances, postBalances } = transactionDetail.meta;
+  let sol_data = await getSOLInformation(
+    transactionDetail,
+    preBalances,
+    postBalances,
+    wallet
+  );
+  //getting SPL balance change
+  let { preTokenBalances, postTokenBalances } = transactionDetail.meta;
+  let SPL_data = await getSPLInformation(
+    preTokenBalances,
+    postTokenBalances,
+    wallet
+  );
 
-      if (sol_data.swap_type == 0) {
-        //swap with out SOL
-        let inToken = SPL_data[0];
-        let outToken = SPL_data[1];
-        if (Math.sign(SPL_data[0].tokenChange) != -1) {
-          inToken = SPL_data[1];
-          outToken = SPL_data[0];
-        }
+  console.log("SPL_data ", SPL_data);
 
-        data_export.tokenIn = inToken.token.name;
-        data_export.qtyIn = inToken.tokenChange;
-        data_export.tokenIn_info = inToken.token;
-        data_export.tokenIn_info.address = inToken.address;
+  if (sol_data != null && SPL_data != null) {
+    data_export.model = "swapping";
 
-        data_export.tokenOut = outToken.token.name;
-        data_export.qtyOut = outToken.tokenChange;
-        data_export.tokenOut_info = outToken.token;
-        data_export.tokenOut_info.address = outToken.address;
+    if (sol_data.swap_type == 0) {
+      //swap with out SOL
+      let inToken = SPL_data[0];
+      let outToken = SPL_data[1];
+      if (Math.sign(SPL_data[0].tokenChange) != -1) {
+        inToken = SPL_data[1];
+        outToken = SPL_data[0];
+      }
+
+      data_export.tokenIn = inToken.token.name;
+      data_export.qtyIn = inToken.tokenChange;
+      data_export.tokenIn_info = inToken.token;
+      data_export.tokenIn_info.address = inToken.address;
+
+      data_export.tokenOut = outToken.token.name;
+      data_export.qtyOut = outToken.tokenChange;
+      data_export.tokenOut_info = outToken.token;
+      data_export.tokenOut_info.address = outToken.address;
+    } else {
+      //Swap with SOL
+      if (Math.sign(sol_data.solChange) == -1) {
+        //Input == SOL
+        //Output == token
+        data_export.tokenIn = "SOL";
+        data_export.qtyIn = sol_data.solChange;
+        data_export.tokenIn_info = null;
+
+        data_export.tokenOut = SPL_data[0].token.name;
+        data_export.qtyOut = SPL_data[0].tokenChange;
+        data_export.tokenOut_info = SPL_data[0].token;
+        data_export.tokenOut_info.address = SPL_data[0].address;
       } else {
-        //Swap with SOL
-        if (Math.sign(sol_data.solChange) == -1) {
-          //Input == SOL
-          //Output == token
-          data_export.tokenIn = "SOL";
-          data_export.qtyIn = sol_data.solChange;
-          data_export.tokenIn_info = null;
+        //Input == token
+        //Output == SOL
+        data_export.tokenIn = SPL_data[0].token.name;
+        data_export.qtyIn = SPL_data[0].tokenChange;
+        data_export.tokenIn_info = SPL_data[0].token;
+        data_export.tokenIn_info.address = SPL_data[0].address;
 
-          data_export.tokenOut = SPL_data[0].token.name;
-          data_export.qtyOut = SPL_data[0].tokenChange;
-          data_export.tokenOut_info = SPL_data[0].token;
-          data_export.tokenOut_info.address = SPL_data[0].address;
-        } else {
-          //Input == token
-          //Output == SOL
-          data_export.tokenIn = SPL_data[0].token.name;
-          data_export.qtyIn = SPL_data[0].tokenChange;
-          data_export.tokenIn_info = SPL_data[0].token;
-          data_export.tokenIn_info.address = SPL_data[0].address;
-
-          data_export.tokenOut = "SOL";
-          data_export.qtyOut = sol_data.solChange;
-          data_export.tokenOut_info = null;
-        }
+        data_export.tokenOut = "SOL";
+        data_export.qtyOut = sol_data.solChange;
+        data_export.tokenOut_info = null;
       }
     }
-
-    return data_export;
-  } else {
-    console.error("txn : faild !!");
-    return null;
   }
+
+  return data_export;
 };
 
 (async () => {
-  const wallet_list = lstWallet;
-
-  wallet_list.forEach((prop, index) => {
-    const pubKey = new solanaWeb3.PublicKey(prop.address);
-    console.log(
-      "start wallet [" + (index + 1) + "] " + prop.name + " : ",
-      prop.address
-    );
-    solanaConnection.onAccountChange(
-      new solanaWeb3.PublicKey(pubKey),
-      async (updatedAccountInfo, context) => {
-        const signatures = await solanaConnection.getSignaturesForAddress(
-          pubKey,
-          { limit: 1 }
-        );
-        signatures.forEach((x) => {
-          console.log(prop.name + " actived..");
-          console.log("link : ", "https://solscan.io/tx/" + x.signature);
-        });
-        let dataE = await getTransaction(signatures[0].signature, prop.address);
-        if (dataE != null) {
-          let dataSend = await sendData(prop.name, dataE);
-          lineSendMessage(dataSend);
-        }
-        console.log("");
-      },
-      "finalized"
-    );
-  });
+  let dataE = await getTransaction(
+    "qfPr7ystfm3qEzMMWMCTJcKand5PYxL8ueHNez3Zz52wqNb9ZJtXG4WsNHSJ5D5Cx86bBtdoLWrvZqGVKvEYfsG",
+    "HenkBtb3i6qFxxrsKoeY7ge6fY96ofhsK84gxkBUKaNo"
+  );
+  console.log("E", dataE);
+  if (dataE != null) {
+    let dataSend = await sendData("test", dataE);
+    //console.log("D", dataSend);
+    lineSendMessage(dataSend);
+  }
 })();

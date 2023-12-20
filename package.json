@@ -4,8 +4,6 @@
     "@metaplex-foundation/umi": "^0.8.10",
     "@metaplex/js": "^4.12.0",
     "@solana/spl-token": "^0.3.9",
-    "@solana/web3.js": "^1.87.6",
-    "discord.js": "^14.14.1",
-    "request": "^2.88.2"
+    "@solana/web3.js": "^1.87.6"
   }
 }
