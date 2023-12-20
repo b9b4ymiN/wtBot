@@ -229,8 +229,8 @@ const getTransaction = async (txn, wallet) => {
         if (dataE != null) {
           let dataSend = await sendData(prop.name, dataE);
           lineSendMessage(dataSend);
+          console.log("");
         }
-        console.log("");
       },
       "finalized"
     );
