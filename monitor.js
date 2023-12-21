@@ -1,16 +1,44 @@
 const solanaWeb3 = require("@solana/web3.js");
 const { programs } = require("@metaplex/js");
-const { sendData, lineSendMessage } = require("./lineNoti");
+const { sendData, lineSendMessage, sendDataNFT } = require("./lineNoti");
 const {
   metadata: { Metadata },
 } = programs;
 
 const endpoint =
-  "https://quiet-attentive-hexagon.solana-mainnet.quiknode.pro/208df33f2dae1636a4bd50fdb510d37e4171d6b2/";
+  "https://agace-p8zi4t-fast-mainnet.helius-rpc.com/";
 const solanaConnection = new solanaWeb3.Connection(endpoint);
 const lstWallet = require("./wallet.json");
 
 const wallet_Fip = "FLiPggWYQyKVTULFWMQjAk26JfK5XRCajfyTmD5weaZ7";
+
+const PROGRAM_ACCOUNTS = {
+  MagicEden: [
+    'MEisE1HzehtrDpAAT8PnLHjpSSkRYakotTuJRPjTpo8',
+    'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K',
+  ],
+  Solanart: [
+    'CJsLwbP1iu5DuUikHEJnLfANgKy6stB2uFgvBBHoyxwz',
+    'hausS13jsjafwWwGqZTUQRmWyvyxn9EQpqMwV1PBBmk',
+  ],
+  MortuaryInc: ['minc9MLymfBSEs9ho1pUaXbQQPdfnTnxUvJa8TWx85E'],
+  Yawww: ['5SKmrbAxnHV2sgqyDXkGrLrokZYtWWVEEk5Soed7VLVN'],
+  Hyperspace: ['HYPERfwdTjyJ2SCaKHmpF2MtrXqWxrsotYDsTrshHWq8'],
+  CoralCube: ['6U2LkBQ6Bqd1VFt7H76343vpSwS5Tb1rNyXSNnjkf9VL'],
+  SpinerMarket: ['SNPRohhBurQwrpwAptw1QYtpFdfEKitr4WSJ125cN1g'],
+  Tensor: ['TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN']
+}
+
+const PROGRAM_ACCOUNT_URLS = {
+  MagicEden: 'https://www.magiceden.io/item-details',
+  Solanart: 'https://solanart.io/search',
+  MortuaryInc: 'https://mortuary-inc.io',
+  Yawww: 'https://www.yawww.io/marketplace/listing',
+  Hyperspace: 'https://hyperspace.xyz/token',
+  CoralCube: 'https://coralcube.io/detail',
+  SpinerMarket: 'https://www.sniper.xyz/asset',
+  Tensor: 'https://www.tensor.trade/item',
+}
 
 const getTokenMeta = async (tokenPubKey) => {
   try {
@@ -118,107 +146,224 @@ function convertTZ(date, tzString) {
   );
 }
 
+const inferMarketPlace = async (accountKeys) => {
+  //console.info('Inferring solana marketplace')
+  for (const [key, value] of Object.entries(PROGRAM_ACCOUNTS)) {
+
+    let account = accountKeys.find((publicKey) =>
+      value.includes(publicKey.toString())
+    )
+    // console.log('value : ' + value, ' pubKey : ' + account)
+    if (account) {
+      return { name: key, url: PROGRAM_ACCOUNT_URLS[key] }
+    }
+  }
+  return null
+}
+
+const inferTradeDirection = (
+  wallet,
+  logMessages,
+  preTokenBalances,
+  postTokenBalances
+) => {
+  console.log('log ', logMessages)
+  const isListingInstruction = Boolean(
+    logMessages.find(
+      (message) =>
+        message.includes('Instruction: List item') ||
+        message.includes('Instruction: Sell')
+    )
+  )
+  const isDelistingInstruction = Boolean(
+    logMessages.find(
+      (message) =>
+        message.includes('Instruction: CancelSell') ||
+        message.includes('Instruction: Cancel listing') ||
+        message.includes('Instruction: Cancel')
+    )
+  )
+  const isBuyInstruction = Boolean(
+    logMessages.find(
+      (message) => message.includes('Instruction: Deposit') ||
+        message.includes('Instruction: BuyNft'))
+  )
+
+  if (isListingInstruction) {
+    return 'LISTING'
+  }
+
+  if (isDelistingInstruction) {
+    return 'DE_LISTING'
+  }
+
+  if (isBuyInstruction) {
+    return postTokenBalances[0].owner === wallet ? 'BUY' : 'SELL'
+  }
+  return ''
+}
+
 const getTransaction = async (txn, wallet) => {
-  //setting data to export information
-  let data_export = {};
-  //setting txn link
-  data_export.txn_link = "https://solscan.io/tx/" + txn;
-  //getting information transaction
-  let transactionDetail = await solanaConnection.getParsedTransaction(txn, {
-    maxSupportedTransactionVersion: 0,
-  });
-  //getting and setting transaction time
-  const date = convertTZ(new Date(transactionDetail.blockTime * 1000), "Asia/Jakarta").toISOString().
-    replace(/T/, ' ').      // replace T with a space
-    replace(/\..+/, '');
-  data_export.time = date;
-
-  let chkFip = transactionDetail.transaction.message.accountKeys.filter(
-    (x) => x.pubkey.toString() == wallet_Fip
-  );
-  //console.log('chkFip : ', chkFip != null ? chkFip.length : 0);
-
-  //setting status
-  transactionDetail.meta.err
-    ? (data_export.status = "Failed")
-    : (data_export.status = "Success");
-  //check status : fail
-  if (data_export.status != "Failed" && (chkFip == null || chkFip.length == 0)) {
-    //getting sol balance information
-    let { preBalances, postBalances } = transactionDetail.meta;
-    let sol_data = await getSOLInformation(
-      transactionDetail,
-      preBalances,
-      postBalances,
-      wallet
-    );
-    //getting SPL balance change
-    let { preTokenBalances, postTokenBalances } = transactionDetail.meta;
-    let SPL_data = await getSPLInformation(
-      preTokenBalances,
-      postTokenBalances,
-      wallet
-    );
-    if (sol_data != null && SPL_data != null) {
-      data_export.model = "swapping";
-
-      if (sol_data.swap_type == 0) {
-        //swap with out SOL
-        let inToken = SPL_data[0];
-        let outToken = SPL_data[1];
-        if (Math.sign(SPL_data[0].tokenChange) != -1) {
-          inToken = SPL_data[1];
-          outToken = SPL_data[0];
-        }
-
-        data_export.tokenIn = inToken.token.name;
-        data_export.qtyIn = inToken.tokenChange;
-        data_export.tokenIn_info = inToken.token;
-        data_export.tokenIn_info.address = inToken.address;
-
-        data_export.tokenOut = outToken.token.name;
-        data_export.qtyOut = outToken.tokenChange;
-        data_export.tokenOut_info = outToken.token;
-        data_export.tokenOut_info.address = outToken.address;
-      } else {
-        //Swap with SOL
-        if (Math.sign(sol_data.solChange) == -1) {
-          //Input == SOL
-          //Output == token
-          data_export.tokenIn = "SOL";
-          data_export.qtyIn = sol_data.solChange;
-          data_export.tokenIn_info = null;
-
-          data_export.tokenOut = SPL_data[0].token.name;
-          data_export.qtyOut = SPL_data[0].tokenChange;
-          data_export.tokenOut_info = SPL_data[0].token;
-          data_export.tokenOut_info.address = SPL_data[0].address;
-        } else {
-          //Input == token
-          //Output == SOL
-          data_export.tokenIn = SPL_data[0].token.name;
-          data_export.qtyIn = SPL_data[0].tokenChange;
-          data_export.tokenIn_info = SPL_data[0].token;
-          data_export.tokenIn_info.address = SPL_data[0].address;
-
-          data_export.tokenOut = "SOL";
-          data_export.qtyOut = sol_data.solChange;
-          data_export.tokenOut_info = null;
-        }
-      }
+  try {
+    //setting data to export information
+    let data_export = {};
+    //setting txn link
+    data_export.txn_link = "https://solscan.io/tx/" + txn;
+    data_export.error = false;
+    //getting information transaction
+    let transactionDetail = await solanaConnection.getParsedTransaction(txn, {
+      maxSupportedTransactionVersion: 0, commitment: 'confirmed'
+    });
+    //getting and setting transaction time
+    try {
+      const date = convertTZ(new Date(transactionDetail.blockTime * 1000), "Asia/Jakarta").toISOString().
+        replace(/T/, ' ').      // replace T with a space
+        replace(/\..+/, '');
+      data_export.time = date;
+    } catch {
+      const date = convertTZ(new Date(), "Asia/Jakarta").toISOString().
+        replace(/T/, ' ').      // replace T with a space
+        replace(/\..+/, '');
+      data_export.time = 'T:' + date;
     }
 
-    return data_export;
-  } else if (chkFip != null && chkFip.length != 0) {
-    console.error("txn : play_flipgg transaction....");
-    return null;
-  }
-  else {
-    console.error("txn : faild !!");
+    let chkFip = transactionDetail != null ? transactionDetail.transaction.message.accountKeys.filter(
+      (x) => x.pubkey.toString() == wallet_Fip
+    ) : null;
+    //console.log('chkFip : ', chkFip != null ? chkFip.length : 0);
+
+    //setting status
+    transactionDetail.meta.err
+      ? (data_export.status = "Failed")
+      : (data_export.status = "Success");
+    //check status : fail
+    if (data_export.status != "Failed" && (chkFip == null || chkFip.length == 0)) {
+      //getting sol balance information
+      let { preBalances, postBalances } = transactionDetail.meta;
+      let sol_data = await getSOLInformation(
+        transactionDetail,
+        preBalances,
+        postBalances,
+        wallet
+      );
+      //getting SPL balance change
+      let { preTokenBalances, postTokenBalances } = transactionDetail.meta;
+      //For checking NFT Market
+      const staticAccountKeys = transactionDetail.transaction.message.accountKeys.map(
+        (x) => x.pubkey.toString()
+      );
+
+      const NFTmarketPlace = await inferMarketPlace(staticAccountKeys)
+      console.log('marketPlace:', NFTmarketPlace)
+
+      if (NFTmarketPlace != null) {
+        data_export.market = NFTmarketPlace;
+        data_export.type = 'NFT';
+        let mintToken = postTokenBalances[0]?.mint
+        const price =
+          Math.abs(preBalances[0] - postBalances[0]) / solanaWeb3.LAMPORTS_PER_SOL
+
+        let tradeDirection = ''
+        tradeDirection = inferTradeDirection(
+          wallet,
+          transactionDetail.meta.logMessages,
+          preTokenBalances,
+          postTokenBalances
+        )
+
+        const metadata = await getTokenMeta(mintToken)
+        data_export.nftMeta = {
+          name: metadata.name,
+          tradeDirection,
+          price: price,
+          image: metadata.image,
+          transactionDate: data_export.time,
+          marketPlaceURL: `${NFTmarketPlace.url}/${mintToken}`,
+        }
+
+        return data_export;
+      }
+      else {
+        data_export.market = null;
+        data_export.type = 'Token';
+      }
+
+      let SPL_data = await getSPLInformation(
+        preTokenBalances,
+        postTokenBalances,
+        wallet
+      );
+      if (sol_data != null && SPL_data != null) {
+        data_export.model = "swapping";
+
+        if (sol_data.swap_type == 0) {
+          //swap with out SOL
+          let inToken = SPL_data[0];
+          let outToken = SPL_data[1];
+          if (Math.sign(SPL_data[0].tokenChange) != -1) {
+            inToken = SPL_data[1];
+            outToken = SPL_data[0];
+          }
+
+          data_export.tokenIn = inToken.token.name;
+          data_export.qtyIn = inToken.tokenChange;
+          data_export.tokenIn_info = inToken.token;
+          data_export.tokenIn_info.address = inToken.address;
+
+          data_export.tokenOut = outToken.token.name;
+          data_export.qtyOut = outToken.tokenChange;
+          data_export.tokenOut_info = outToken.token;
+          data_export.tokenOut_info.address = outToken.address;
+        } else {
+          //Swap with SOL
+          if (Math.sign(sol_data.solChange) == -1) {
+            //Input == SOL
+            //Output == token
+            data_export.tokenIn = "SOL";
+            data_export.qtyIn = sol_data.solChange;
+            data_export.tokenIn_info = null;
+
+            data_export.tokenOut = SPL_data[0].token.name;
+            data_export.qtyOut = SPL_data[0].tokenChange;
+            data_export.tokenOut_info = SPL_data[0].token;
+            data_export.tokenOut_info.address = SPL_data[0].address;
+          } else {
+            //Input == token
+            //Output == SOL
+            data_export.tokenIn = SPL_data[0].token.name;
+            data_export.qtyIn = SPL_data[0].tokenChange;
+            data_export.tokenIn_info = SPL_data[0].token;
+            data_export.tokenIn_info.address = SPL_data[0].address;
+
+            data_export.tokenOut = "SOL";
+            data_export.qtyOut = sol_data.solChange;
+            data_export.tokenOut_info = null;
+          }
+        }
+      } else {
+        if (sol_data == null)
+          console.error("txn : sol data is null");
+        else
+          console.error("txn : SPL data is null !!");
+        return null;
+      }
+      return data_export;
+    } else if (chkFip != null && chkFip.length != 0) {
+      console.error("txn : play_flipgg transaction....");
+      return null;
+    }
+    else {
+      console.error("txn : faild !!");
+      return null;
+    }
+  } catch (e) {
+    console.error("catch : ", e);
     return null;
   }
 };
-
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+}
 (async () => {
   const wallet_list = lstWallet;
 
@@ -231,20 +376,28 @@ const getTransaction = async (txn, wallet) => {
     solanaConnection.onAccountChange(
       new solanaWeb3.PublicKey(pubKey),
       async (updatedAccountInfo, context) => {
+        await delay(3000)
         const signatures = await solanaConnection.getSignaturesForAddress(
           pubKey,
-          { limit: 1 }
+          { limit: 1 }, "finalized"
         );
         signatures.forEach((x) => {
           console.log(prop.name + " actived..");
           console.log("link : ", "https://solscan.io/tx/" + x.signature);
         });
         let dataE = await getTransaction(signatures[0].signature, prop.address);
-        if (dataE != null) {
-          let dataSend = await sendData(prop.name, dataE);
-          lineSendMessage(dataSend);
-        }
-        console.log("");
+        if (dataE != null && dataE.error != true) {
+          console.log("Time : ", dataE.time);
+          if (dataE.type == "Token") {
+            let dataSend = await sendData(prop.name, dataE);
+            lineSendMessage(dataSend);
+            console.log("");
+          } else {
+            let dataSend = await sendDataNFT(prop.name, dataE);
+            lineSendMessage(dataSend);
+            console.log("");
+          } console.log("");
+        } console.log("");
       },
       "finalized"
     );
