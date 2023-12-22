@@ -1,6 +1,7 @@
 const request = require("request");
 const url_line_notification = "https://notify-api.line.me/api/notify";
-const CoinGeckoClient = require('coingecko-api-v3')
+const CoinGeckoClient = require("coingecko-api-v3");
+const axios = require("axios");
 /*
     format
       data_export.tokenIn = inToken.token.name;
@@ -21,32 +22,56 @@ function numberCmp(value) {
   return usformatter.format(value);
 }
 
-const calPrice = async (inSymbol, inQty, outSymbol, outQty) => {
-  const cgc = new CoinGeckoClient.CoinGeckoClient({ autoRetry: true, });
-  const solanaPrice = await cgc.simplePrice({
-    vs_currencies: 'usd',
-    ids: 'solana',
-  })
-  const priceUSD = solanaPrice.solana.usd
-
-  if (inSymbol == 'SOL' || outSymbol == 'SOL') {
-    if (inSymbol == 'SOL')
-      return 'Price: 1 ' + outSymbol + " ≈ " + Math.abs(inQty * priceUSD / outQty) + ' USDC'
-    else {
-      console.info('qtyIn : ', inQty)
-      console.info('outQty : ', outQty)
-      console.info('priceUSD : ', outQty * priceUSD)
-      console.info('s : ', Math.abs(inQty / outQty * priceUSD))
-      return 'Price: 1 ' + outSymbol + " ≈ " + Math.abs(inQty / outQty * priceUSD) + ' USDC'
-    }
-  } else if (inSymbol == 'USDC' || outQty == 'USDC') {
-    if (inSymbol == 'USDC')
-      return 'Price: 1 ' + outSymbol + " ≈ " + Math.abs(inQty / outQty) + ' USDC'
-    else
-      return 'Price:1 ' + outSymbol + " ≈ " + Math.abs(inQty / outQty) + ' USDC'
+const getImage = async (url) => {
+  try {
+    const res = await axios.get(url);
+    return res.data;
+  } catch {
+    return null;
   }
+};
 
-}
+const calPrice = async (inSymbol, inQty, outSymbol, outQty) => {
+  const cgc = new CoinGeckoClient.CoinGeckoClient({ autoRetry: true });
+  const solanaPrice = await cgc.simplePrice({
+    vs_currencies: "usd",
+    ids: "solana",
+  });
+  const priceUSD = solanaPrice.solana.usd;
+
+  if (inSymbol == "SOL" || outSymbol == "SOL") {
+    if (inSymbol == "SOL")
+      return (
+        "Price: 1 " +
+        outSymbol +
+        " ≈ " +
+        Math.abs((inQty * priceUSD) / outQty) +
+        " USDC"
+      );
+    else {
+      console.info("qtyIn : ", inQty);
+      console.info("outQty : ", outQty);
+      console.info("priceUSD : ", outQty * priceUSD);
+      console.info("s : ", Math.abs((inQty / outQty) * priceUSD));
+      return (
+        "Price: 1 " +
+        outSymbol +
+        " ≈ " +
+        Math.abs((inQty / outQty) * priceUSD) +
+        " USDC"
+      );
+    }
+  } else if (inSymbol == "USDC" || outQty == "USDC") {
+    if (inSymbol == "USDC")
+      return (
+        "Price: 1 " + outSymbol + " ≈ " + Math.abs(inQty / outQty) + " USDC"
+      );
+    else
+      return (
+        "Price:1 " + outSymbol + " ≈ " + Math.abs(inQty / outQty) + " USDC"
+      );
+  }
+};
 
 const sendData = async (name, data_export) => {
   try {
@@ -55,8 +80,12 @@ const sendData = async (name, data_export) => {
     let buy_jup = "https://jup.ag/swap/";
     let buy_ray = "https://raydium.io/swap/?inputCurrency=sol&outputCurrency=";
 
-    let priceStr = await calPrice(data_export.tokenIn_info ? data_export.tokenIn_info.symbol : 'SOL', data_export.qtyIn
-      , data_export.tokenOut_info ? data_export.tokenOut_info.symbol : 'SOL', data_export.qtyOut,)
+    let priceStr = await calPrice(
+      data_export.tokenIn_info ? data_export.tokenIn_info.symbol : "SOL",
+      data_export.qtyIn,
+      data_export.tokenOut_info ? data_export.tokenOut_info.symbol : "SOL",
+      data_export.qtyOut
+    );
 
     let message =
       "\n" +
@@ -123,10 +152,9 @@ const sendData = async (name, data_export) => {
     //https://jup.ag/swap/KPOP_DcUoGUeNTLhhzyrcz49LE7z3MEFwca2N9uSw1xbVi1gm-SOL
     return message;
   } catch (err) {
-    console.error('Error format message:', err)
+    console.error("Error format message:", err);
     return null;
   }
-
 };
 
 const sendDataNFT = async (name, data_export) => {
@@ -140,37 +168,54 @@ const sendDataNFT = async (name, data_export) => {
           marketPlaceURL: `${marketPlaceNFT.url}/${mintToken}`,
        */
     if (data_export.nftMeta != null) {
+      let dataMeta = await getImage(data_export.nftMeta.image);
+      const cgc = new CoinGeckoClient.CoinGeckoClient({ autoRetry: true });
+      const solanaPrice = await cgc.simplePrice({
+        vs_currencies: "usd",
+        ids: "solana",
+      });
+      const priceUSD = solanaPrice.solana.usd * data_export.nftMeta.price;
+
       let message =
         "\n" +
         "Whale : " +
         name +
         "\n" +
-        "mode : " + data_export.nftMeta.tradeDirection +
+        "mode : " +
+        data_export.nftMeta.tradeDirection +
         "\n" +
         "time : " +
         data_export.time +
         "\n" +
         "==========================" +
-        "NFT:" + data_export.nftMeta.name + "\n" +
-        "Image:" + data_export.nftMeta.image + "\n" +
+        "NFT:" +
+        data_export.nftMeta.name +
+        "\n" +
+        "Image:" +
+        dataMeta.image +
+        "\n" +
         "==========================" +
         "\n" +
-        "Price : " + data_export.nftMeta.price +
-        "\n" +
-        "\n" +
+        "Price : " +
+        data_export.nftMeta.price.toFixed(3) +
+        "◎\n" +
+        "Price : " +
+        priceUSD.toFixed(3) +
+        " USD\n" +
         "External Link : \n" +
+        "market : " +
+        data_export.nftMeta.marketPlaceURL +
+        "\n" +
         "txn : " +
-        data_export.nftMeta.marketPlaceURL + "\n";
+        data_export.txn_link;
       return message;
     } else {
       return "";
     }
-
   } catch (err) {
-    console.error('Error format message:', err)
+    console.error("Error format message:", err);
     return null;
   }
-
 };
 
 const lineSendMessage = async (msg) => {
