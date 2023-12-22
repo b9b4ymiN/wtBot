@@ -49,6 +49,9 @@ const getTokenMeta = async (tokenPubKey) => {
     });
   } catch (error) {
     console.log("error fetching metadata: ", error);
+    return new Promise((resolve) => {
+      resolve(null);
+    });
   }
 };
 
@@ -105,32 +108,44 @@ const getSPLInformation = async (
       let token_list = await Promise.all(
         preToken_acc.map(async (account, i) => {
           let data_token = await getTokenMeta(account.mint);
-          let tokenChange =
-            postToken_acc[i].uiTokenAmount.uiAmount -
-            account.uiTokenAmount.uiAmount;
-          if (tokenChange != 0) {
-            return new Promise((resolve) => {
-              resolve({
-                token: data_token,
-                tokenChange,
-                address: account.mint,
+          if (data_token != null) {
+            let tokenChange =
+              postToken_acc[i].uiTokenAmount.uiAmount -
+              account.uiTokenAmount.uiAmount;
+            if (tokenChange != 0) {
+              return new Promise((resolve) => {
+                resolve({
+                  token: data_token,
+                  tokenChange,
+                  address: account.mint,
+                });
               });
-            });
+            } else {
+              return new Promise((resolve) => {
+                resolve(null);
+              });
+            }
           }
         })
       );
       return token_list;
     } else if (postToken_acc != null && postToken_acc.length != 0) {
       let data_token = await getTokenMeta(postToken_acc[0].mint);
-      return new Promise((resolve) => {
-        resolve([
-          {
-            token: data_token,
-            tokenChange: postToken_acc[0].uiTokenAmount.uiAmount,
-            address: postToken_acc[0].mint,
-          },
-        ]);
-      });
+      if (data_token != null) {
+        return new Promise((resolve) => {
+          resolve([
+            {
+              token: data_token,
+              tokenChange: postToken_acc[0].uiTokenAmount.uiAmount,
+              address: postToken_acc[0].mint,
+            },
+          ]);
+        });
+      } else {
+        return new Promise((resolve) => {
+          resolve(null);
+        });
+      }
     } else return null;
     // No wallet using token
   } catch {
@@ -190,15 +205,15 @@ const inferTradeDirection = (
   )
 
   if (isListingInstruction) {
-    return 'LISTING'
+    return 'LISTING 📋'
   }
 
   if (isDelistingInstruction) {
-    return 'DE_LISTING'
+    return 'DE_LISTING ❌'
   }
 
   if (isBuyInstruction) {
-    return postTokenBalances[0].owner === wallet ? 'BUY' : 'SELL'
+    return postTokenBalances[0].owner === wallet ? 'BUY 💸' : 'SELL 💰'
   }
   return ''
 }

@@ -48,6 +48,32 @@ const calPrice = async (inSymbol, inQty, outSymbol, outQty) => {
 
 }
 
+const calTokenPrice = async (tokenIn, qtyIn, tokenOut, qtyOut) => {
+  const cgc = new CoinGeckoClient.CoinGeckoClient({ autoRetry: true, });
+  const solanaPrice = await cgc.simplePrice({
+    vs_currencies: 'usd',
+    ids: 'solana',
+  })
+  const priceSol2USD = solanaPrice.solana.usd
+  if (tokenIn == "SOL" || tokenOut == "SOL") {
+    let USDValue = (tokenIn == "SOL" ? qtyIn * priceSol2USD : qtyOut * priceSol2USD);
+    if (tokenIn == "SOL")
+      return Number.parseFloat(USDValue / qtyOut).toFixed(7);
+    else
+      return Number.parseFloat(USDValue / qtyIn).toFixed(7);
+  } // Calculate by USD
+  else if (tokenIn.includes('USD') || tokenOut.includes('USD')) {
+    if (tokenIn.includes('USD'))
+      return Number.parseFloat(qtyIn / qtyOut).toFixed(7);
+    else
+      return Number.parseFloat(qtyOut / qtyIn).toFixed(7);
+  } else if ((tokenIn == "SOL" && tokenOut.includes('USD')) ||
+    (tokenOut == "SOL" && tokenIn.includes('USD'))) {
+    return priceSol2USD;
+  } else
+    return null;
+}
+
 const sendData = async (name, data_export) => {
   try {
     let rugCheck = "https://rugcheck.xyz/tokens/";
@@ -55,41 +81,20 @@ const sendData = async (name, data_export) => {
     let buy_jup = "https://jup.ag/swap/";
     let buy_ray = "https://raydium.io/swap/?inputCurrency=sol&outputCurrency=";
 
-    let priceStr = await calPrice(data_export.tokenIn_info ? data_export.tokenIn_info.symbol : 'SOL', data_export.qtyIn
-      , data_export.tokenOut_info ? data_export.tokenOut_info.symbol : 'SOL', data_export.qtyOut,)
+    let priceToken2USD = await calTokenPrice(data_export.tokenIn, data_export.qtyIn
+      , data_export.tokenOut, data_export.qtyOut)
 
     let message =
+      name + "\n" +
+      "Mode : SWAP 📈" + "\n" +
+      "In : " + numberCmp(Math.abs(data_export.qtyIn)) +
+      (data_export.tokenIn != "SOL" ? "-" + data_export.tokenIn_info.symbol : "◎") +
       "\n" +
-      "Whale : " +
-      name +
+      "Out : " + numberCmp(data_export.qtyOut) +
+      (data_export.tokenOut != "SOL" ? "-" + data_export.tokenOut_info.symbol : "◎") +
       "\n" +
-      "mode : Swapping" +
-      "\n" +
-      "time : " +
-      data_export.time +
-      "\n" +
-      "==========================" +
-      "\n" +
-      "token-IN : " +
-      data_export.tokenIn +
-      "\n" +
-      "amount : " +
-      numberCmp(Math.abs(data_export.qtyIn)) +
-      "-" +
-      (data_export.tokenIn != "SOL" ? data_export.tokenIn_info.symbol : "◎") +
-      "\n" +
-      "==========================" +
-      "\n" +
-      "token-Out : " +
-      data_export.tokenOut +
-      "\n" +
-      "amount : " +
-      numberCmp(data_export.qtyOut) +
-      "-" +
-      (data_export.tokenOut != "SOL" ? data_export.tokenOut_info.symbol : "◎") +
-      "\n" +
-      "==========================" +
-      //"\n" + priceStr +
+      "Price ≈ " + (priceToken2USD == null ? 'N/A' : Math.abs(priceToken2USD)) + " USD \n" +
+      "Time : " + data_export.time + "\n" +
       "\n" +
       "External Link : \n" +
       (data_export.tokenIn != "SOL" && data_export.tokenIn != "USD Coin"
@@ -141,26 +146,14 @@ const sendDataNFT = async (name, data_export) => {
        */
     if (data_export.nftMeta != null) {
       let message =
-        "\n" +
-        "Whale : " +
-        name +
-        "\n" +
-        "mode : " + data_export.nftMeta.tradeDirection +
-        "\n" +
-        "time : " +
-        data_export.time +
-        "\n" +
-        "==========================" +
+        name + "\n" + "Mode : " + data_export.nftMeta.tradeDirection + "\n" +
+        "time : " + data_export.time + "\n" +
         "NFT:" + data_export.nftMeta.name + "\n" +
-        "Image:" + data_export.nftMeta.image + "\n" +
-        "==========================" +
-        "\n" +
-        "Price : " + data_export.nftMeta.price +
-        "\n" +
+        "Price : " + data_export.nftMeta.price.toFixed(2) + "◎\n" +
         "\n" +
         "External Link : \n" +
-        "txn : " +
-        data_export.nftMeta.marketPlaceURL + "\n";
+        "mk.link : " + data_export.nftMeta.marketPlaceURL + "\n" +
+        "txn : " + data_export.txn_link + "\n";
       return message;
     } else {
       return "";
@@ -182,7 +175,7 @@ const lineSendMessage = async (msg) => {
         "Content-Type": "multipart/form-data",
       },
       auth: {
-        bearer: "gAT6jeg1jBuvM9OYK7fVs7jX8exbfew436ZsSST5qN3",
+        bearer: "GSf0kcbCGG2XawAENFxIPDFjIELfqQ9bnE3InE7LNDb",
       },
       form: {
         message: msg,

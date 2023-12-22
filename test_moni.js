@@ -364,8 +364,8 @@ const inferTradeDirection = (
 
 (async () => {
   let dataE = await getTransaction(
-    "rxyt3rhtgC2xP4NZ9j6C7XZSNwEbAkq3VguLGEQ5y6JHvNYkmCoMQMtqTehSzfVRrsFZkyemt6UnazK6JXknuC5",
-    "8ABwQrx4f8A8LtifWdttbLZDz7GXQuQtB5GqKKPHUQ4r"
+    "eFawg2XkEdLsY4iCeufughbA5AnwqaBaEeCEV3p9xEe5iWcKbjgCNYtnE7cyCDgaQsA3E3ZGNKG8ZTqoRUTbGEn",
+    "4SkEmhCEdLbJxKk6iFzCJ4eR1rLQGHRTs3q8i2PHLbq8"
   );
   console.log("E", dataE);
   if (dataE != null && dataE.error != true) {
