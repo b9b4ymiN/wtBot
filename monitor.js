@@ -1,6 +1,6 @@
 const solanaWeb3 = require("@solana/web3.js");
 const { programs } = require("@metaplex/js");
-const { sendData, lineSendMessage, sendDataNFT } = require("./lineNoti");
+const { sendData, lineSendMessage, sendDataNFT, lineSendMessageNFT } = require("./lineNoti");
 const {
   metadata: { Metadata },
 } = programs;
@@ -227,6 +227,7 @@ const getTransaction = async (txn, wallet) => {
     //setting txn link
     data_export.txn_link = "https://solscan.io/tx/" + txn;
     data_export.error = false;
+    data_export.wallet_address = wallet;
     //getting information transaction
     let transactionDetail = await solanaConnection.getParsedTransaction(txn, {
       maxSupportedTransactionVersion: 0,
@@ -422,7 +423,7 @@ function delay(time) {
             console.log("");
           } else {
             let dataSend = await sendDataNFT(prop.name, dataE);
-            lineSendMessage(dataSend);
+            lineSendMessageNFT(dataSend);
             console.log("");
           }
           console.log("");

@@ -168,6 +168,7 @@ const getTransaction = async (txn, wallet) => {
     //setting txn link
     data_export.txn_link = "https://solscan.io/tx/" + txn;
     data_export.error = false;
+    data_export.wallet_address = wallet;
     //getting information transaction
     let transactionDetail = await solanaConnection.getParsedTransaction(txn, {
       maxSupportedTransactionVersion: 0, commitment: 'confirmed'

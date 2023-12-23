@@ -99,6 +99,32 @@ const calTokenPrice = async (tokenIn, qtyIn, tokenOut, qtyOut) => {
     return null;
 }
 
+const genLinkJUP = async (tokenIn, tokenOut, tokenIn_info, tokenOut_info) => {
+  try {
+    if (tokenIn == "SOL") {
+      if (tokenOut_info != null && !tokenOut.includes('USD'))
+        return 'https://jup.ag/swap/SOL-' + tokenOut_info.symbol + '_' + tokenOut_info.address;
+      else
+        return null;
+    } else if (tokenOut == "SOL") {
+      if (tokenIn_info != null && !tokenIn.includes('USD'))
+        return 'https://jup.ag/swap/SOL-' + tokenIn_info.symbol + '_' + tokenIn_info.address;
+      else
+        return null;
+    }
+  } catch {
+    return null;
+  }
+}
+
+const genDexscreener = async (tokenAddress, markerWallet) => {
+  try {
+    return 'https://dexscreener.com/solana/' + tokenAddress + '?maker=' + markerWallet
+  } catch {
+    return '';
+  }
+}
+
 const sendData = async (name, data_export) => {
   try {
     let rugCheck = "https://rugcheck.xyz/tokens/";
@@ -107,7 +133,15 @@ const sendData = async (name, data_export) => {
     let buy_ray = "https://raydium.io/swap/?inputCurrency=sol&outputCurrency=";
 
     let priceToken2USD = await calTokenPrice(data_export.tokenIn, data_export.qtyIn
-      , data_export.tokenOut, data_export.qtyOut)
+      , data_export.tokenOut, data_export.qtyOut);
+
+    let jup_link = await genLinkJUP(data_export.tokenIn, data_export.tokenOut
+      , data_export.tokenIn_info, data_export.tokenOut_info);
+    let dex_link = await genDexscreener((data_export.tokenIn.includes('SOL') || data_export.tokenIn.includes('USD')
+      ? data_export.tokenOut_info.address : data_export.tokenIn_info.address), data_export.wallet_address)
+    //Test
+    console.log('jup_link :', jup_link)
+    //jup_link
 
     let message =
       name + "\n" +
@@ -127,26 +161,9 @@ const sendData = async (name, data_export) => {
         : "") +
       (data_export.tokenOut != "SOL" && data_export.tokenOut != "USD Coin"
         ? "Check : " + rugCheck + data_export.tokenOut_info.address + "\n"
-        : "") +
-      (data_export.tokenIn != "SOL" && data_export.tokenIn != "USD Coin"
-        ? "Chart : " + bird + data_export.tokenIn_info.address + "\n"
-        : "") +
-      (data_export.tokenOut != "SOL" && data_export.tokenOut != "USD Coin"
-        ? "Chart : " + bird + data_export.tokenOut_info.address + "\n"
-        : "") +
-      (data_export.tokenOut != "SOL" && data_export.tokenOut != "USD Coin"
-        ? "Buy : " + buy_jup + data_export.tokenOut_info.address + "-SOL \n"
-        : "") +
-      (data_export.tokenIn != "SOL" && data_export.tokenIn != "USD Coin"
-        ? "Buy : " + buy_jup + data_export.tokenIn_info.address + "-SOL \n"
-        : "") +
-      ///Raydium
-      (data_export.tokenOut != "SOL" && data_export.tokenOut != "USD Coin"
-        ? "Buy : " + buy_ray + data_export.tokenOut_info.address + " \n"
-        : "") +
-      (data_export.tokenIn != "SOL" && data_export.tokenIn != "USD Coin"
-        ? "Buy : " + buy_ray + data_export.tokenIn_info.address + " \n"
-        : "") +
+        : "") + 'Chart :' + (dex_link) + '\n' +
+      //Jup
+      (jup_link != null ? 'Buy : ' + jup_link : '') + "\n" +
       "txn : " +
       data_export.txn_link +
       "\n";
@@ -181,11 +198,11 @@ const sendDataNFT = async (name, data_export) => {
 
         name + "\n" + "Mode : " + data_export.nftMeta.tradeDirection + "\n" +
         "time : " + data_export.time + "\n" +
-        "NFT:" + data_export.nftMeta.name + "\n" +
+        "NFT : " + data_export.nftMeta.name + "\n" +
         "Price : " + data_export.nftMeta.price.toFixed(2) + "◎\n" +
         "\n" +
-        "External Link : \n" +
-        "mk.link : " + data_export.nftMeta.marketPlaceURL + "\n" +
+        "External Link\n" +
+        "mk : " + data_export.nftMeta.marketPlaceURL + "\n" +
         "txn : " + data_export.txn_link + "\n";
       return message;
     } else {
@@ -222,6 +239,32 @@ const lineSendMessage = async (msg) => {
   );
 };
 
+const lineSendMessageNFT = async (msg) => {
+  request(
+    {
+      method: "POST",
+      uri: url_line_notification,
+      header: {
+        "Content-Type": "multipart/form-data",
+      },
+      auth: {
+        bearer: "LWv6cObZz7pQ0wfqA9XYjRvLsieKezLI1D6WEFVy96J",
+      },
+      form: {
+        message: msg,
+      },
+    },
+    (err, httpResponse, body) => {
+      if (err) {
+        console.log(err);
+      } else {
+        console.log("Complete send message...");
+      }
+    }
+  );
+};
+
 exports.sendData = sendData;
 exports.sendDataNFT = sendDataNFT;
 exports.lineSendMessage = lineSendMessage;
+exports.lineSendMessageNFT = lineSendMessageNFT;
