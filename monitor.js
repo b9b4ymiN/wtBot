@@ -418,13 +418,17 @@ function delay(time) {
         if (dataE != null && dataE.error != true) {
           console.log("Time : ", dataE.time);
           if (dataE.type == "Token") {
-            let dataSend = await sendData(prop.name, dataE);
-            lineSendMessage(dataSend);
-            console.log("");
+            if (dataE.qtyIn != null && dataE.qtyIn != 0) {
+              let dataSend = await sendData(prop.name, dataE);
+              lineSendMessage(dataSend);
+              console.log("");
+            } else console.log("QTY IN = 0 is not sawp transaction...");
           } else {
-            let dataSend = await sendDataNFT(prop.name, dataE);
-            lineSendMessageNFT(dataSend);
-            console.log("");
+            if (dataE.nftMeta != null && dataE.nftMeta.tradeDirection != "") {
+              let dataSend = await sendDataNFT(prop.name, dataE);
+              lineSendMessageNFT(dataSend);
+              console.log("");
+            } else console.log("tradeDirection is not clear....");
           }
           console.log("");
         }
