@@ -185,7 +185,8 @@ const inferTradeDirection = (
     logMessages.find(
       (message) =>
         message.includes("Instruction: List item") ||
-        message.includes("Instruction: Sell")
+        message.includes("Instruction: Sell") ||
+        message.includes("Instruction: EditSingleListing")
     )
   );
   const isDelistingInstruction = Boolean(
@@ -283,37 +284,45 @@ const getTransaction = async (txn, wallet) => {
         transactionDetail.transaction.message.accountKeys.map((x) =>
           x.pubkey.toString()
         );
-
       const NFTmarketPlace = await inferMarketPlace(staticAccountKeys);
       console.log("marketPlace:", NFTmarketPlace);
-
       if (NFTmarketPlace != null) {
         data_export.market = NFTmarketPlace;
         data_export.type = "NFT";
         let mintToken = postTokenBalances[0]?.mint;
-        const price =
-          Math.abs(preBalances[0] - postBalances[0]) /
-          solanaWeb3.LAMPORTS_PER_SOL;
+        if (mintToken == null || mintToken == undefined) {
+          if (staticAccountKeys != null && staticAccountKeys.length != 0)
+            mintToken = staticAccountKeys[3]
+        }
+        //
+        if (mintToken != null) {
 
-        let tradeDirection = "";
-        tradeDirection = inferTradeDirection(
-          wallet,
-          transactionDetail.meta.logMessages,
-          preTokenBalances,
-          postTokenBalances
-        );
+          const price =
+            Math.abs(preBalances[0] - postBalances[0]) /
+            solanaWeb3.LAMPORTS_PER_SOL;
 
-        const metadata = await getTokenMeta(mintToken);
-        data_export.nftMeta = {
-          name: metadata.name,
-          tradeDirection,
-          price: price,
-          image: metadata.uri,
-          transactionDate: data_export.time,
-          marketPlaceURL: `${NFTmarketPlace.url}/${mintToken}`,
-        };
+          let tradeDirection = "";
+          tradeDirection = inferTradeDirection(
+            wallet,
+            transactionDetail.meta.logMessages,
+            preTokenBalances,
+            postTokenBalances
+          );
 
-        return data_export;
+          console.log('mintToken:', mintToken)
+          const metadata = await getTokenMeta(mintToken);
+          console.log('metadata:', metadata)
+          data_export.nftMeta = {
+            name: metadata.name,
+            tradeDirection,
+            price: price,
+            image: metadata.uri,
+            transactionDate: data_export.time,
+            marketPlaceURL: `${NFTmarketPlace.url}/${mintToken}`,
+          };
+
+          return data_export;
+        } else return null;
       } else {
         data_export.market = null;
         data_export.type = "Token";
@@ -418,7 +427,7 @@ function delay(time) {
         if (dataE != null && dataE.error != true) {
           console.log("Time : ", dataE.time);
           if (dataE.type == "Token") {
-            if (dataE.qtyIn != null && dataE.qtyIn != 0) {
+            if (dataE.qtyIn != null && dataE.qtyIn != 0 && dataE.qtyIn < 0.1) {
               let dataSend = await sendData(prop.name, dataE);
               lineSendMessage(dataSend);
               console.log("");
