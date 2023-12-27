@@ -384,5 +384,5 @@ const inferTradeDirection = (
     } console.log("");
   } console.log("");
 })();
-
+//https://solscan.io/tx/4nTvUYP2CfqDtErcptaQwnpay8WnVTg6zYuXbH8oWvTfDdQttye9d6tejFY1u6pgJc23tM7XPp2ZFmu4oRavTjPk
 //https://solscan.io/tx/4W969229oSi8xpiUyUN8QWqLrX4NBJJpa8P6Rz6erwUgZ2ko2f3cQDweBYoLNmSrTeERzxDLVtx6Zb2N1TUKz1jb

@@ -1,10 +1,18 @@
-[
+[  
+  {
+    "name": "gentlemonke.sol",
+    "address": "JCapwSzWyHkjuVrT5ZTyKwBHzV9oYrTNhZguAMc9PiEc"
+  },
+  {
+    "name": "Gloom",
+    "address": "46KiU5jAAvrY7oEmtgFdKsLLPL1RfTQsKySge7SQPxXu"
+  },
   {
     "name": "Pow",
     "address": "GSE6vfr6vws493G22jfwCU6Zawh3dfvSYXYQqKhFsBwe"
   },
   {
-    "name": "💎 SheetFu🐒.magic",
+    "name": "SheetFu.magic",
     "address": "DjXKETEYzkkG6YzegWgy78vpaPH1eBxaiGTVoQrkQNFP"
   },
   {
@@ -38,10 +46,6 @@
   {
     "name": "CarlosOMFG",
     "address": "EePnRqV4Q2VEHp5nPADqeGKcfPMFmnhDW1Ln9LKsTzWQ"
-  },
-  {
-    "name": "Juggler",
-    "address": "FSHZdx73rEGcS5JXUXvW6h8i4AtsrfPTHcgcbXLVUD3A"
   },
   {
     "name": "Fxnction",
