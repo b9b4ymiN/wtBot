@@ -37,6 +37,7 @@ const endpoint =
 const solanaConnection = new solanaWeb3.Connection(endpoint);
 const lstWallet = require("./wallet.json");
 const wallet_Fip = "FLiPggWYQyKVTULFWMQjAk26JfK5XRCajfyTmD5weaZ7";
+
 const getTokenMeta = async (tokenPubKey) => {
   try {
     const addr = await Metadata.getPDA(tokenPubKey);
@@ -46,6 +47,9 @@ const getTokenMeta = async (tokenPubKey) => {
     });
   } catch (error) {
     console.log("error fetching metadata: ", error);
+    return new Promise((resolve) => {
+      resolve(null);
+    });
   }
 };
 
@@ -171,24 +175,33 @@ const getTransaction = async (txn, wallet) => {
     data_export.wallet_address = wallet;
     //getting information transaction
     let transactionDetail = await solanaConnection.getParsedTransaction(txn, {
-      maxSupportedTransactionVersion: 0, commitment: 'confirmed'
+      maxSupportedTransactionVersion: 0,
+      commitment: "confirmed",
     });
     //getting and setting transaction time
     try {
-      const date = convertTZ(new Date(transactionDetail.blockTime * 1000), "Asia/Jakarta").toISOString().
-        replace(/T/, ' ').      // replace T with a space
-        replace(/\..+/, '');
+      const date = convertTZ(
+        new Date(transactionDetail.blockTime * 1000),
+        "Asia/Jakarta"
+      )
+        .toISOString()
+        .replace(/T/, " ") // replace T with a space
+        .replace(/\..+/, "");
       data_export.time = date;
     } catch {
-      const date = convertTZ(new Date(), "Asia/Jakarta").toISOString().
-        replace(/T/, ' ').      // replace T with a space
-        replace(/\..+/, '');
-      data_export.time = 'T:' + date;
+      const date = convertTZ(new Date(), "Asia/Jakarta")
+        .toISOString()
+        .replace(/T/, " ") // replace T with a space
+        .replace(/\..+/, "");
+      data_export.time = "T:" + date;
     }
 
-    let chkFip = transactionDetail != null ? transactionDetail.transaction.message.accountKeys.filter(
-      (x) => x.pubkey.toString() == wallet_Fip
-    ) : null;
+    let chkFip =
+      transactionDetail != null
+        ? transactionDetail.transaction.message.accountKeys.filter(
+          (x) => x.pubkey.toString() == wallet_Fip
+        )
+        : null;
     //console.log('chkFip : ', chkFip != null ? chkFip.length : 0);
 
     //setting status
@@ -196,7 +209,10 @@ const getTransaction = async (txn, wallet) => {
       ? (data_export.status = "Failed")
       : (data_export.status = "Success");
     //check status : fail
-    if (data_export.status != "Failed" && (chkFip == null || chkFip.length == 0)) {
+    if (
+      data_export.status != "Failed" &&
+      (chkFip == null || chkFip.length == 0)
+    ) {
       //getting sol balance information
       let { preBalances, postBalances } = transactionDetail.meta;
       let sol_data = await getSOLInformation(
@@ -208,43 +224,52 @@ const getTransaction = async (txn, wallet) => {
       //getting SPL balance change
       let { preTokenBalances, postTokenBalances } = transactionDetail.meta;
       //For checking NFT Market
-      const staticAccountKeys = transactionDetail.transaction.message.accountKeys.map(
-        (x) => x.pubkey.toString()
-      );
-
-      const NFTmarketPlace = await inferMarketPlace(staticAccountKeys)
-      console.log('marketPlace:', NFTmarketPlace)
-
+      const staticAccountKeys =
+        transactionDetail.transaction.message.accountKeys.map((x) =>
+          x.pubkey.toString()
+        );
+      const NFTmarketPlace = await inferMarketPlace(staticAccountKeys);
+      console.log("marketPlace:", NFTmarketPlace);
       if (NFTmarketPlace != null) {
         data_export.market = NFTmarketPlace;
-        data_export.type = 'NFT';
-        let mintToken = postTokenBalances[0]?.mint
-        const price =
-          Math.abs(preBalances[0] - postBalances[0]) / solanaWeb3.LAMPORTS_PER_SOL
-
-        let tradeDirection = ''
-        tradeDirection = inferTradeDirection(
-          wallet,
-          transactionDetail.meta.logMessages,
-          preTokenBalances,
-          postTokenBalances
-        )
-
-        const metadata = await getTokenMeta(mintToken)
-        data_export.nftMeta = {
-          name: metadata.name,
-          tradeDirection,
-          price: price,
-          image: metadata.image,
-          transactionDate: data_export.time,
-          marketPlaceURL: `${NFTmarketPlace.url}/${mintToken}`,
+        data_export.type = "NFT";
+        let mintToken = postTokenBalances[0]?.mint;
+        if (mintToken == null || mintToken == undefined) {
+          if (staticAccountKeys != null && staticAccountKeys.length != 0)
+            mintToken = staticAccountKeys[3]
         }
+        //
+        if (mintToken != null) {
 
-        return data_export;
-      }
-      else {
+          const price =
+            Math.abs(preBalances[0] - postBalances[0]) /
+            solanaWeb3.LAMPORTS_PER_SOL;
+
+          let tradeDirection = "";
+          tradeDirection = inferTradeDirection(
+            wallet,
+            transactionDetail.meta.logMessages,
+            preTokenBalances,
+            postTokenBalances
+          );
+
+          console.log('mintToken:', mintToken)
+          const metadata = await getTokenMeta(mintToken);
+          console.log('metadata:', metadata)
+          data_export.nftMeta = {
+            name: metadata.name,
+            tradeDirection,
+            price: price,
+            image: metadata.uri,
+            transactionDate: data_export.time,
+            marketPlaceURL: `${NFTmarketPlace.url}/${mintToken}`,
+          };
+
+          return data_export;
+        } else return null;
+      } else {
         data_export.market = null;
-        data_export.type = 'Token';
+        data_export.type = "Token";
       }
 
       let SPL_data = await getSPLInformation(
@@ -300,18 +325,15 @@ const getTransaction = async (txn, wallet) => {
           }
         }
       } else {
-        if (sol_data == null)
-          console.error("txn : sol data is null");
-        else
-          console.error("txn : SPL data is null !!");
+        if (sol_data == null) console.error("txn : sol data is null");
+        else console.error("txn : SPL data is null !!");
         return null;
       }
       return data_export;
     } else if (chkFip != null && chkFip.length != 0) {
       console.error("txn : play_flipgg transaction....");
       return null;
-    }
-    else {
+    } else {
       console.error("txn : faild !!");
       return null;
     }
@@ -327,55 +349,61 @@ const inferTradeDirection = (
   preTokenBalances,
   postTokenBalances
 ) => {
-  console.log('log ', logMessages)
+  //console.log('log ', logMessages)
   const isListingInstruction = Boolean(
     logMessages.find(
       (message) =>
-        message.includes('Instruction: List item') ||
-        message.includes('Instruction: Sell')
+        message.includes("Instruction: List item") ||
+        message.includes("Instruction: Sell") ||
+        message.includes("Instruction: EditSingleListing")
     )
-  )
+  );
   const isDelistingInstruction = Boolean(
     logMessages.find(
       (message) =>
-        message.includes('Instruction: CancelSell') ||
-        message.includes('Instruction: Cancel listing') ||
-        message.includes('Instruction: Cancel')
+        message.includes("Instruction: CancelSell") ||
+        message.includes("Instruction: Cancel listing") ||
+        message.includes("Instruction: Cancel")
     )
-  )
+  );
   const isBuyInstruction = Boolean(
     logMessages.find(
-      (message) => message.includes('Instruction: Deposit') ||
-        message.includes('Instruction: BuyNft'))
-  )
+      (message) =>
+        message.includes("Instruction: Deposit") ||
+        message.includes("Instruction: BuyNft") ||
+        message.includes("Instruction: BuySingleListing")
+    )
+  );
 
   if (isListingInstruction) {
-    return 'LISTING'
+
+    return 'LISTING 📋'
   }
 
   if (isDelistingInstruction) {
-    return 'DE_LISTING'
+    return 'DE_LISTING ❌'
   }
 
   if (isBuyInstruction) {
-    return postTokenBalances[0].owner === wallet ? 'BUY' : 'SELL'
+    return postTokenBalances[0].owner === wallet ? 'BUY 💸' : 'SELL 💰'
   }
-  return ''
-}
-
+  return "";
+};
 (async () => {
   let dataE = await getTransaction(
-    "eFawg2XkEdLsY4iCeufughbA5AnwqaBaEeCEV3p9xEe5iWcKbjgCNYtnE7cyCDgaQsA3E3ZGNKG8ZTqoRUTbGEn",
-    "4SkEmhCEdLbJxKk6iFzCJ4eR1rLQGHRTs3q8i2PHLbq8"
+    "5j3hb2LPTkSk6Hdmk6sRfz7fvLtgGiC7JxHdwapcYmBLU3v79GjcrKz1oTpJF7qYhG3TGJ2njsgVnkMBojraGzLt",
+    "46KiU5jAAvrY7oEmtgFdKsLLPL1RfTQsKySge7SQPxXu"
   );
   console.log("E", dataE);
   if (dataE != null && dataE.error != true) {
     console.log("Time : ", dataE.time);
     if (dataE.type == "Token") {
-      console.log("token message........");
-      let dataSend = await sendData('test', dataE);
-      lineSendMessage(dataSend);
-      console.log("");
+      console.log("dataE.qtyIn : ", dataE.qtyIn);
+      if (dataE.qtyIn != null && dataE.qtyIn != 0 && dataE.qtyIn < 0.1) {
+        let dataSend = await sendData(prop.name, dataE);
+        lineSendMessage(dataSend);
+        console.log("");
+      } else console.log("QTY IN = 0 is not sawp transaction...");
     } else {
       console.log("NFT message........");
       let dataSend = await sendDataNFT('test', dataE);
@@ -384,5 +412,5 @@ const inferTradeDirection = (
     } console.log("");
   } console.log("");
 })();
-//https://solscan.io/tx/4nTvUYP2CfqDtErcptaQwnpay8WnVTg6zYuXbH8oWvTfDdQttye9d6tejFY1u6pgJc23tM7XPp2ZFmu4oRavTjPk
+
 //https://solscan.io/tx/4W969229oSi8xpiUyUN8QWqLrX4NBJJpa8P6Rz6erwUgZ2ko2f3cQDweBYoLNmSrTeERzxDLVtx6Zb2N1TUKz1jb
