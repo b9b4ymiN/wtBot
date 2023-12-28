@@ -11,6 +11,7 @@ import {
 } from "@raydium-io/raydium-sdk";
 import { OpenOrders } from "@project-serum/serum";
 import BN from "bn.js";
+import { compute } from "./compute";
 
 const endpoint =
   "https://quiet-attentive-hexagon.solana-mainnet.quiknode.pro/208df33f2dae1636a4bd50fdb510d37e4171d6b2/";
@@ -156,8 +157,35 @@ export async function swap() {
     new PublicKey(SOL_USDC_POOL_ID),
     4
   );
-  console.log(`fetched pool keys: ${poolKeys}`);
-  console.log(poolKeys ? poolKeys.marketBids : "");
+  //console.log(`fetched pool keys: ${poolKeys}`);
+  //console.log(poolKeys);
+  const computation: any = await compute(
+    connection,
+    poolKeys,
+    new PublicKey("So11111111111111111111111111111111111111112"),
+    new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+    1,
+    2
+  );
+
+  const amountOut = computation[0];
+  const minAmountOut = computation[1];
+  const currentPrice = computation[2];
+  const executionPrice = computation[3];
+  const priceImpact = computation[4];
+  const fee = computation[5];
+  const amountIn = computation[6];
+  console.log(`amountIn: `, amountIn);
+  console.log(
+    `\n\tAmount out: ${amountOut.toFixed()},\n\tMin Amount out: ${minAmountOut.toFixed()}`
+  );
+  if (priceImpact.toFixed() > 5) {
+    console.log(`\tpriceImpact: ${priceImpact.toFixed()}`);
+  } else if (priceImpact.toFixed() < 5 && priceImpact.toFixed() > 1) {
+    console.log(`\tpriceImpact: ${priceImpact.toFixed()}`);
+  } else {
+    console.log(`\tpriceImpact: ${priceImpact.toFixed()}`);
+  }
 }
 
 swap();
