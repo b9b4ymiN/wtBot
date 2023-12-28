@@ -1,6 +1,11 @@
 const solanaWeb3 = require("@solana/web3.js");
 const { programs } = require("@metaplex/js");
-const { sendData, lineSendMessage, sendDataNFT, lineSendMessageNFT } = require("./lineNoti");
+const {
+  sendData,
+  lineSendMessage,
+  sendDataNFT,
+  lineSendMessageNFT,
+} = require("./lineNoti");
 const {
   metadata: { Metadata },
 } = programs;
@@ -26,6 +31,7 @@ const PROGRAM_ACCOUNTS = {
   CoralCube: ["6U2LkBQ6Bqd1VFt7H76343vpSwS5Tb1rNyXSNnjkf9VL"],
   SpinerMarket: ["SNPRohhBurQwrpwAptw1QYtpFdfEKitr4WSJ125cN1g"],
   Tensor: ["TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN"],
+  Hadeswap: ["hadeK9DLv9eA7ya5KCTqSvSvRZeJC3JgD5a9Y3CNbvu"],
 };
 
 const PROGRAM_ACCOUNT_URLS = {
@@ -37,6 +43,7 @@ const PROGRAM_ACCOUNT_URLS = {
   CoralCube: "https://coralcube.io/detail",
   SpinerMarket: "https://www.sniper.xyz/asset",
   Tensor: "https://www.tensor.trade/item",
+  Hadeswap: "https://www.hadeswap.com",
 };
 
 const getTokenMeta = async (tokenPubKey) => {
@@ -186,7 +193,8 @@ const inferTradeDirection = (
       (message) =>
         message.includes("Instruction: List item") ||
         message.includes("Instruction: Sell") ||
-        message.includes("Instruction: EditSingleListing")
+        message.includes("Instruction: EditSingleListing") ||
+        message.includes("Instruction: SellNftToTokenToNftPair")
     )
   );
   const isDelistingInstruction = Boolean(
@@ -207,16 +215,15 @@ const inferTradeDirection = (
   );
 
   if (isListingInstruction) {
-
-    return 'LISTING 📋'
+    return "LISTING 📋";
   }
 
   if (isDelistingInstruction) {
-    return 'DE_LISTING ❌'
+    return "DE_LISTING ❌";
   }
 
   if (isBuyInstruction) {
-    return postTokenBalances[0].owner === wallet ? 'BUY 💸' : 'SELL 💰'
+    return postTokenBalances[0].owner === wallet ? "BUY 💸" : "SELL 💰";
   }
   return "";
 };
@@ -255,8 +262,8 @@ const getTransaction = async (txn, wallet) => {
     let chkFip =
       transactionDetail != null
         ? transactionDetail.transaction.message.accountKeys.filter(
-          (x) => x.pubkey.toString() == wallet_Fip
-        )
+            (x) => x.pubkey.toString() == wallet_Fip
+          )
         : null;
     //console.log('chkFip : ', chkFip != null ? chkFip.length : 0);
 
@@ -292,11 +299,10 @@ const getTransaction = async (txn, wallet) => {
         let mintToken = postTokenBalances[0]?.mint;
         if (mintToken == null || mintToken == undefined) {
           if (staticAccountKeys != null && staticAccountKeys.length != 0)
-            mintToken = staticAccountKeys[3]
+            mintToken = staticAccountKeys[3];
         }
         //
         if (mintToken != null) {
-
           const price =
             Math.abs(preBalances[0] - postBalances[0]) /
             solanaWeb3.LAMPORTS_PER_SOL;
@@ -309,9 +315,9 @@ const getTransaction = async (txn, wallet) => {
             postTokenBalances
           );
 
-          console.log('mintToken:', mintToken)
+          console.log("mintToken:", mintToken);
           const metadata = await getTokenMeta(mintToken);
-          console.log('metadata:', metadata)
+          console.log("metadata:", metadata);
           data_export.nftMeta = {
             name: metadata.name,
             tradeDirection,
@@ -427,7 +433,7 @@ function delay(time) {
         if (dataE != null && dataE.error != true) {
           console.log("Time : ", dataE.time);
           if (dataE.type == "Token") {
-            if (dataE.qtyIn != null && dataE.qtyIn != 0 && dataE.qtyIn < 0.1) {
+            if (dataE.qtyIn != null && dataE.qtyIn != 0 && dataE.qtyIn < 1) {
               let dataSend = await sendData(prop.name, dataE);
               lineSendMessage(dataSend);
               console.log("");
