@@ -74,56 +74,69 @@ const calPrice = async (inSymbol, inQty, outSymbol, outQty) => {
 };
 
 const calTokenPrice = async (tokenIn, qtyIn, tokenOut, qtyOut) => {
-  const cgc = new CoinGeckoClient.CoinGeckoClient({ autoRetry: true, });
+  const cgc = new CoinGeckoClient.CoinGeckoClient({ autoRetry: true });
   const solanaPrice = await cgc.simplePrice({
-    vs_currencies: 'usd',
-    ids: 'solana',
-  })
-  const priceSol2USD = solanaPrice.solana.usd
+    vs_currencies: "usd",
+    ids: "solana",
+  });
+  const priceSol2USD = solanaPrice.solana.usd;
   if (tokenIn == "SOL" || tokenOut == "SOL") {
-    let USDValue = (tokenIn == "SOL" ? qtyIn * priceSol2USD : qtyOut * priceSol2USD);
+    let USDValue =
+      tokenIn == "SOL" ? qtyIn * priceSol2USD : qtyOut * priceSol2USD;
     if (tokenIn == "SOL")
       return Number.parseFloat(USDValue / qtyOut).toFixed(7);
-    else
-      return Number.parseFloat(USDValue / qtyIn).toFixed(7);
+    else return Number.parseFloat(USDValue / qtyIn).toFixed(7);
   } // Calculate by USD
-  else if (tokenIn.includes('USD') || tokenOut.includes('USD')) {
-    if (tokenIn.includes('USD'))
+  else if (tokenIn.includes("USD") || tokenOut.includes("USD")) {
+    if (tokenIn.includes("USD"))
       return Number.parseFloat(qtyIn / qtyOut).toFixed(7);
-    else
-      return Number.parseFloat(qtyOut / qtyIn).toFixed(7);
-  } else if ((tokenIn == "SOL" && tokenOut.includes('USD')) ||
-    (tokenOut == "SOL" && tokenIn.includes('USD'))) {
+    else return Number.parseFloat(qtyOut / qtyIn).toFixed(7);
+  } else if (
+    (tokenIn == "SOL" && tokenOut.includes("USD")) ||
+    (tokenOut == "SOL" && tokenIn.includes("USD"))
+  ) {
     return priceSol2USD;
-  } else
-    return null;
-}
+  } else return null;
+};
 
 const genLinkJUP = async (tokenIn, tokenOut, tokenIn_info, tokenOut_info) => {
   try {
-    if (tokenIn == "SOL") {
-      if (tokenOut_info != null && !tokenOut.includes('USD'))
-        return 'https://jup.ag/swap/SOL-' + tokenOut_info.symbol + '_' + tokenOut_info.address;
-      else
-        return null;
-    } else if (tokenOut == "SOL") {
-      if (tokenIn_info != null && !tokenIn.includes('USD'))
-        return 'https://jup.ag/swap/SOL-' + tokenIn_info.symbol + '_' + tokenIn_info.address;
-      else
-        return null;
+    if (tokenIn.includes("SOL")) {
+      if (tokenOut_info != null && !tokenOut.includes("USD"))
+        return (
+          "https://jup.ag/swap/SOL-" +
+          tokenOut_info.symbol +
+          "_" +
+          tokenOut_info.address
+        );
+      else return null;
+    } else if (tokenOut.includes("SOL")) {
+      if (tokenIn_info != null && !tokenIn.includes("USD"))
+        return (
+          "https://jup.ag/swap/SOL-" +
+          tokenIn_info.symbol +
+          "_" +
+          tokenIn_info.address
+        );
+      else return null;
     }
   } catch {
     return null;
   }
-}
+};
 
 const genDexscreener = async (tokenAddress, markerWallet) => {
   try {
-    return 'https://dexscreener.com/solana/' + tokenAddress + '?maker=' + markerWallet
+    return (
+      "https://dexscreener.com/solana/" +
+      tokenAddress +
+      "?maker=" +
+      markerWallet
+    );
   } catch {
-    return '';
+    return "";
   }
-}
+};
 
 const sendData = async (name, data_export) => {
   try {
@@ -132,28 +145,52 @@ const sendData = async (name, data_export) => {
     let buy_jup = "https://jup.ag/swap/";
     let buy_ray = "https://raydium.io/swap/?inputCurrency=sol&outputCurrency=";
 
-    let priceToken2USD = await calTokenPrice(data_export.tokenIn, data_export.qtyIn
-      , data_export.tokenOut, data_export.qtyOut);
+    let priceToken2USD = await calTokenPrice(
+      data_export.tokenIn,
+      data_export.qtyIn,
+      data_export.tokenOut,
+      data_export.qtyOut
+    );
 
-    let jup_link = await genLinkJUP(data_export.tokenIn, data_export.tokenOut
-      , data_export.tokenIn_info, data_export.tokenOut_info);
-    let dex_link = await genDexscreener((data_export.tokenIn.includes('SOL') || data_export.tokenIn.includes('USD')
-      ? data_export.tokenOut_info.address : data_export.tokenIn_info.address), data_export.wallet_address)
+    let jup_link = await genLinkJUP(
+      data_export.tokenIn,
+      data_export.tokenOut,
+      data_export.tokenIn_info,
+      data_export.tokenOut_info
+    );
+    let dex_link = await genDexscreener(
+      data_export.tokenIn.includes("SOL") || data_export.tokenIn.includes("USD")
+        ? data_export.tokenOut_info.address
+        : data_export.tokenIn_info.address,
+      data_export.wallet_address
+    );
     //Test
-    console.log('jup_link :', jup_link)
+    console.log("jup_link :", jup_link);
     //jup_link
 
     let message =
-      name + "\n" +
-      "Mode : SWAP 📈" + "\n" +
-      "In : " + numberCmp(Math.abs(data_export.qtyIn)) +
-      (data_export.tokenIn != "SOL" ? "-" + data_export.tokenIn_info.symbol : "◎") +
+      name +
       "\n" +
-      "Out : " + numberCmp(data_export.qtyOut) +
-      (data_export.tokenOut != "SOL" ? "-" + data_export.tokenOut_info.symbol : "◎") +
+      "Mode : SWAP 📈" +
       "\n" +
-      "Price ≈ " + (priceToken2USD == null ? 'N/A' : Math.abs(priceToken2USD)) + " USD \n" +
-      "Time : " + data_export.time + "\n" +
+      "In : " +
+      numberCmp(Math.abs(data_export.qtyIn)) +
+      (!data_export.tokenIn.includes("SOL")
+        ? "-" + data_export.tokenIn_info.symbol
+        : "◎") +
+      "\n" +
+      "Out : " +
+      numberCmp(data_export.qtyOut) +
+      (!data_export.tokenOut.includes("SOL")
+        ? "-" + data_export.tokenOut_info.symbol
+        : "◎") +
+      "\n" +
+      "Price ≈ " +
+      (priceToken2USD == null ? "N/A" : Math.abs(priceToken2USD)) +
+      " USD \n" +
+      "Time : " +
+      data_export.time +
+      "\n" +
       "\n" +
       "External Link : \n" +
       (data_export.tokenIn != "SOL" && data_export.tokenIn != "USD Coin"
@@ -161,9 +198,17 @@ const sendData = async (name, data_export) => {
         : "") +
       (data_export.tokenOut != "SOL" && data_export.tokenOut != "USD Coin"
         ? "Check : " + rugCheck + data_export.tokenOut_info.address + "\n"
-        : "") + 'Chart :' + (dex_link) + '\n' +
+        : "") +
+      "Chart :" +
+      dex_link +
+      "\n" +
       //Jup
-      (jup_link != null ? 'Buy : ' + jup_link : '') + "\n" +
+      "Buy:" +
+      (data_export.tokenIn.includes("SOL") || 
+      data_export.tokenIn.includes("USD")
+        ? buy_ray + data_export.tokenOut_info.address
+        : buy_ray + data_export.tokenIn_info.address) +
+      "\n" +
       "txn : " +
       data_export.txn_link +
       "\n";
@@ -195,15 +240,28 @@ const sendDataNFT = async (name, data_export) => {
       const priceUSD = solanaPrice.solana.usd * data_export.nftMeta.price;
 
       let message =
-
-        name + "\n" + "Mode : " + data_export.nftMeta.tradeDirection + "\n" +
-        "time : " + data_export.time + "\n" +
-        "NFT : " + data_export.nftMeta.name + "\n" +
-        "Price : " + data_export.nftMeta.price.toFixed(2) + "◎\n" +
+        name +
+        "\n" +
+        "Mode : " +
+        data_export.nftMeta.tradeDirection +
+        "\n" +
+        "time : " +
+        data_export.time +
+        "\n" +
+        "NFT : " +
+        data_export.nftMeta.name +
+        "\n" +
+        "Price : " +
+        data_export.nftMeta.price.toFixed(2) +
+        "◎\n" +
         "\n" +
         "External Link\n" +
-        "mk : " + data_export.nftMeta.marketPlaceURL + "\n" +
-        "txn : " + data_export.txn_link + "\n";
+        "mk : " +
+        data_export.nftMeta.marketPlaceURL +
+        "\n" +
+        "txn : " +
+        data_export.txn_link +
+        "\n";
       return message;
     } else {
       return "";

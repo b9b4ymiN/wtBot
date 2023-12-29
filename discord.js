@@ -1,19 +1,28 @@
-const axios = require("axios");
+const { Webhook, MessageBuilder } = require("discord-webhook-node");
 let url =
-    "https://discord.com/api/webhooks/950381536346243143/mzQGIwhluhggIHdbePYhJHZVAza539EwZHR0LzL-UXzeoKZzphHZiQOFD7mYm7FC6Ax5";
+  "https://discord.com/api/webhooks/1190104812113625159/Z3nqKSbZcDF4oTMgG92CHalOkMU3hu6FN8MD_xWeraOVYQKtAuFea0OYNbPL6bFEJmDJ";
+const hook = new Webhook(url);
 
-const sendMsg = async function (msg) {
-    let message = {
-        username: "Captain_Whale",
-        content: msg,
-    };
-    let result = await axios.post(url, message)
-        .then(async function (res) {
-            console.log("res : ", res.data);
-        })
-        .catch(async function (err) {
-            console.log("err : ", err);
-        });
-};
+const embed = new MessageBuilder()
+  .setTitle("Swap")
+  .setAuthor(
+    "Pow",
+    "https://cdn.discordapp.com/embed/avatars/0.png",
+    "https://www.google.com"
+  )
+  .setURL("https://www.google.com")
+  .addField("First field", "this is inline", true)
+  .addField("Second field", "this is not inline")
+  .setColor("#00b0f4")
+  .setThumbnail("https://cdn.discordapp.com/embed/avatars/0.png")
+  .setDescription("Oh look a description :)")
+  .setImage("https://cdn.discordapp.com/embed/avatars/0.png")
+  .setFooter(
+    "Hey its a footer",
+    "https://cdn.discordapp.com/embed/avatars/0.png"
+  )
+  .setTimestamp();
 
-sendMsg("<b>tseee</b> sss");
+hook.send(embed);
+
+

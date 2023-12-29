@@ -164,7 +164,7 @@ export async function swap() {
     poolKeys,
     new PublicKey("So11111111111111111111111111111111111111112"),
     new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
-    1,
+    10000,
     2
   );
 
@@ -175,9 +175,10 @@ export async function swap() {
   const priceImpact = computation[4];
   const fee = computation[5];
   const amountIn = computation[6];
-  console.log(`amountIn: `, amountIn);
+
   console.log(
-    `\n\tAmount out: ${amountOut.toFixed()},\n\tMin Amount out: ${minAmountOut.toFixed()}`
+    `\n\tAmount out: ${amountOut.toFixed()},\n\tMin Amount out: ${minAmountOut.toFixed()}`,
+    `\n\tcurrent Price: ${currentPrice.toFixed()},\n\texecution Price: ${executionPrice.toFixed()}`
   );
   if (priceImpact.toFixed() > 5) {
     console.log(`\tpriceImpact: ${priceImpact.toFixed()}`);

@@ -43,7 +43,7 @@ const PROGRAM_ACCOUNT_URLS = {
   CoralCube: "https://coralcube.io/detail",
   SpinerMarket: "https://www.sniper.xyz/asset",
   Tensor: "https://www.tensor.trade/item",
-  Hadeswap: "https://www.hadeswap.com",
+  Hadeswap: "https://app.hadeswap.com/item/",
 };
 
 const getTokenMeta = async (tokenPubKey) => {
@@ -360,6 +360,38 @@ const getTransaction = async (txn, wallet) => {
           data_export.qtyOut = outToken.tokenChange;
           data_export.tokenOut_info = outToken.token;
           data_export.tokenOut_info.address = outToken.address;
+        } else if (SPL_data != null && SPL_data.length > 1) {
+          console.log("SPL_data:", SPL_data);
+          let inToken = Math.sign(
+            SPL_data[0].tokenChange == 1 ? SPL_data[0] : SPL_data[1]
+          );
+
+          let outToken = Math.sign(
+            SPL_data[0].tokenChange == 1 ? SPL_data[1] : SPL_data[0]
+          );
+
+          //check in&out
+          if (Math.sign(SPL_data[0].tokenChange) == -1) {
+            data_export.tokenIn = SPL_data[0].token.name;
+            data_export.qtyIn = SPL_data[0].tokenChange;
+            data_export.tokenIn_info = SPL_data[0].token;
+            data_export.tokenIn_info.address = SPL_data[0].address;
+
+            data_export.tokenOut = SPL_data[1].token.name;
+            data_export.qtyOut = SPL_data[1].tokenChange;
+            data_export.tokenOut_info = SPL_data[1].token;
+            data_export.tokenOut_info.address = SPL_data[1].address;
+          } else {
+            data_export.tokenIn = SPL_data[1].token.name;
+            data_export.qtyIn = SPL_data[1].tokenChange;
+            data_export.tokenIn_info = SPL_data[1].token;
+            data_export.tokenIn_info.address = SPL_data[1].address;
+
+            data_export.tokenOut = SPL_data[0].token.name;
+            data_export.qtyOut = SPL_data[0].tokenChange;
+            data_export.tokenOut_info = SPL_data[0].token;
+            data_export.tokenOut_info.address = SPL_data[0].address;
+          }
         } else {
           //Swap with SOL
           if (Math.sign(sol_data.solChange) == -1) {
@@ -404,6 +436,7 @@ const getTransaction = async (txn, wallet) => {
     return null;
   }
 };
+
 function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
@@ -419,7 +452,7 @@ function delay(time) {
     solanaConnection.onAccountChange(
       new solanaWeb3.PublicKey(pubKey),
       async (updatedAccountInfo, context) => {
-        await delay(3000);
+        await delay(2000);
         const signatures = await solanaConnection.getSignaturesForAddress(
           pubKey,
           { limit: 1 },
@@ -433,7 +466,7 @@ function delay(time) {
         if (dataE != null && dataE.error != true) {
           console.log("Time : ", dataE.time);
           if (dataE.type == "Token") {
-            if (dataE.qtyIn != null && dataE.qtyIn != 0 && dataE.qtyIn < 1) {
+            if (dataE.qtyIn != null && dataE.qtyIn > 1) {
               let dataSend = await sendData(prop.name, dataE);
               lineSendMessage(dataSend);
               console.log("");

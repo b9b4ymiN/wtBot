@@ -1,37 +1,45 @@
 const solanaWeb3 = require("@solana/web3.js");
 const { programs } = require("@metaplex/js");
-const { sendData, lineSendMessage, sendDataNFT } = require("./lineNoti");
+const {
+  sendData,
+  lineSendMessage,
+  sendDataNFT,
+  lineSendMessageNFT,
+} = require("./lineNoti");
 const {
   metadata: { Metadata },
 } = programs;
 
 const PROGRAM_ACCOUNTS = {
   MagicEden: [
-    'MEisE1HzehtrDpAAT8PnLHjpSSkRYakotTuJRPjTpo8',
-    'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K',
+    "MEisE1HzehtrDpAAT8PnLHjpSSkRYakotTuJRPjTpo8",
+    "M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K",
   ],
   Solanart: [
-    'CJsLwbP1iu5DuUikHEJnLfANgKy6stB2uFgvBBHoyxwz',
-    'hausS13jsjafwWwGqZTUQRmWyvyxn9EQpqMwV1PBBmk',
+    "CJsLwbP1iu5DuUikHEJnLfANgKy6stB2uFgvBBHoyxwz",
+    "hausS13jsjafwWwGqZTUQRmWyvyxn9EQpqMwV1PBBmk",
   ],
-  MortuaryInc: ['minc9MLymfBSEs9ho1pUaXbQQPdfnTnxUvJa8TWx85E'],
-  Yawww: ['5SKmrbAxnHV2sgqyDXkGrLrokZYtWWVEEk5Soed7VLVN'],
-  Hyperspace: ['HYPERfwdTjyJ2SCaKHmpF2MtrXqWxrsotYDsTrshHWq8'],
-  CoralCube: ['6U2LkBQ6Bqd1VFt7H76343vpSwS5Tb1rNyXSNnjkf9VL'],
-  SpinerMarket: ['SNPRohhBurQwrpwAptw1QYtpFdfEKitr4WSJ125cN1g'],
-  Tensor: ['TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN']
-}
+  MortuaryInc: ["minc9MLymfBSEs9ho1pUaXbQQPdfnTnxUvJa8TWx85E"],
+  Yawww: ["5SKmrbAxnHV2sgqyDXkGrLrokZYtWWVEEk5Soed7VLVN"],
+  Hyperspace: ["HYPERfwdTjyJ2SCaKHmpF2MtrXqWxrsotYDsTrshHWq8"],
+  CoralCube: ["6U2LkBQ6Bqd1VFt7H76343vpSwS5Tb1rNyXSNnjkf9VL"],
+  SpinerMarket: ["SNPRohhBurQwrpwAptw1QYtpFdfEKitr4WSJ125cN1g"],
+  Tensor: ["TSWAPaqyCSx2KABk68Shruf4rp7CxcNi8hAsbdwmHbN"],
+  Hadeswap: ["hadeK9DLv9eA7ya5KCTqSvSvRZeJC3JgD5a9Y3CNbvu"],
+};
 
 const PROGRAM_ACCOUNT_URLS = {
-  MagicEden: 'https://www.magiceden.io/item-details',
-  Solanart: 'https://solanart.io/search',
-  MortuaryInc: 'https://mortuary-inc.io',
-  Yawww: 'https://www.yawww.io/marketplace/listing',
-  Hyperspace: 'https://hyperspace.xyz/token',
-  CoralCube: 'https://coralcube.io/detail',
-  SpinerMarket: 'https://www.sniper.xyz/asset',
-  Tensor: 'https://www.tensor.trade/item',
-}
+  MagicEden: "https://www.magiceden.io/item-details",
+  Solanart: "https://solanart.io/search",
+  MortuaryInc: "https://mortuary-inc.io",
+  Yawww: "https://www.yawww.io/marketplace/listing",
+  Hyperspace: "https://hyperspace.xyz/token",
+  CoralCube: "https://coralcube.io/detail",
+  SpinerMarket: "https://www.sniper.xyz/asset",
+  Tensor: "https://www.tensor.trade/item",
+  Hadeswap: "https://app.hadeswap.com/item/",
+};
+
 const endpoint =
   "https://quiet-attentive-hexagon.solana-mainnet.quiknode.pro/208df33f2dae1636a4bd50fdb510d37e4171d6b2/";
 const solanaConnection = new solanaWeb3.Connection(endpoint);
@@ -101,8 +109,9 @@ const getSPLInformation = async (
     let postToken_acc = postTokenBalances.filter(
       (x) => x.owner.toString() == wallet
     );
-
-
+    /*
+    console.log("preToken_acc:", preToken_acc);
+    console.log("postToken_acc:", postToken_acc);*/
 
     //Getting transaction check with wallet
     if (preToken_acc != null && preToken_acc.length != 0) {
@@ -151,19 +160,18 @@ function convertTZ(date, tzString) {
 }
 
 const inferMarketPlace = async (accountKeys) => {
-  console.info('Inferring solana marketplace')
+  console.info("Inferring solana marketplace");
   for (const [key, value] of Object.entries(PROGRAM_ACCOUNTS)) {
-
     let account = accountKeys.find((publicKey) =>
       value.includes(publicKey.toString())
-    )
-    console.log('value : ' + value, ' pubKey : ' + account)
+    );
+    console.log("value : " + value, " pubKey : " + account);
     if (account) {
-      return { name: key, url: PROGRAM_ACCOUNT_URLS[key] }
+      return { name: key, url: PROGRAM_ACCOUNT_URLS[key] };
     }
   }
-  return null
-}
+  return null;
+}; 
 
 const getTransaction = async (txn, wallet) => {
   try {
@@ -199,8 +207,8 @@ const getTransaction = async (txn, wallet) => {
     let chkFip =
       transactionDetail != null
         ? transactionDetail.transaction.message.accountKeys.filter(
-          (x) => x.pubkey.toString() == wallet_Fip
-        )
+            (x) => x.pubkey.toString() == wallet_Fip
+          )
         : null;
     //console.log('chkFip : ', chkFip != null ? chkFip.length : 0);
 
@@ -236,11 +244,10 @@ const getTransaction = async (txn, wallet) => {
         let mintToken = postTokenBalances[0]?.mint;
         if (mintToken == null || mintToken == undefined) {
           if (staticAccountKeys != null && staticAccountKeys.length != 0)
-            mintToken = staticAccountKeys[3]
+            mintToken = staticAccountKeys[3];
         }
         //
         if (mintToken != null) {
-
           const price =
             Math.abs(preBalances[0] - postBalances[0]) /
             solanaWeb3.LAMPORTS_PER_SOL;
@@ -253,9 +260,9 @@ const getTransaction = async (txn, wallet) => {
             postTokenBalances
           );
 
-          console.log('mintToken:', mintToken)
+          console.log("mintToken:", mintToken);
           const metadata = await getTokenMeta(mintToken);
-          console.log('metadata:', metadata)
+          console.log("metadata:", metadata);
           data_export.nftMeta = {
             name: metadata.name,
             tradeDirection,
@@ -298,6 +305,38 @@ const getTransaction = async (txn, wallet) => {
           data_export.qtyOut = outToken.tokenChange;
           data_export.tokenOut_info = outToken.token;
           data_export.tokenOut_info.address = outToken.address;
+        } else if (SPL_data != null && SPL_data.length > 1) {
+          console.log("SPL_data:", SPL_data);
+          let inToken = Math.sign(
+            SPL_data[0].tokenChange == 1 ? SPL_data[0] : SPL_data[1]
+          );
+
+          let outToken = Math.sign(
+            SPL_data[0].tokenChange == 1 ? SPL_data[1] : SPL_data[0]
+          );
+
+          //check in&out
+          if (Math.sign(SPL_data[0].tokenChange) == -1) {
+            data_export.tokenIn = SPL_data[0].token.name;
+            data_export.qtyIn = SPL_data[0].tokenChange;
+            data_export.tokenIn_info = SPL_data[0].token;
+            data_export.tokenIn_info.address = SPL_data[0].address;
+
+            data_export.tokenOut = SPL_data[1].token.name;
+            data_export.qtyOut = SPL_data[1].tokenChange;
+            data_export.tokenOut_info = SPL_data[1].token;
+            data_export.tokenOut_info.address = SPL_data[1].address;
+          } else {
+            data_export.tokenIn = SPL_data[1].token.name;
+            data_export.qtyIn = SPL_data[1].tokenChange;
+            data_export.tokenIn_info = SPL_data[1].token;
+            data_export.tokenIn_info.address = SPL_data[1].address;
+
+            data_export.tokenOut = SPL_data[0].token.name;
+            data_export.qtyOut = SPL_data[0].tokenChange;
+            data_export.tokenOut_info = SPL_data[0].token;
+            data_export.tokenOut_info.address = SPL_data[0].address;
+          }
         } else {
           //Swap with SOL
           if (Math.sign(sol_data.solChange) == -1) {
@@ -376,41 +415,43 @@ const inferTradeDirection = (
   );
 
   if (isListingInstruction) {
-
-    return 'LISTING 📋'
+    return "LISTING 📋";
   }
 
   if (isDelistingInstruction) {
-    return 'DE_LISTING ❌'
+    return "DE_LISTING ❌";
   }
 
   if (isBuyInstruction) {
-    return postTokenBalances[0].owner === wallet ? 'BUY 💸' : 'SELL 💰'
+    return postTokenBalances[0].owner === wallet ? "BUY 💸" : "SELL 💰";
   }
   return "";
 };
+
 (async () => {
   let dataE = await getTransaction(
-    "5j3hb2LPTkSk6Hdmk6sRfz7fvLtgGiC7JxHdwapcYmBLU3v79GjcrKz1oTpJF7qYhG3TGJ2njsgVnkMBojraGzLt",
-    "46KiU5jAAvrY7oEmtgFdKsLLPL1RfTQsKySge7SQPxXu"
+    "3cm4MkaSVL6WMuvKun51J3DGkZbsWbqkDcg5PcqpFBzFFkz2kKYx3FiuBxuRKqAnWctnEm7VcQMmtaAUVetETSsk",
+    "EAHJNfFDtivTMzKMNXzwAF9RTAeTd4aEYVwLjCiQWY1E"
   );
-  console.log("E", dataE);
+
   if (dataE != null && dataE.error != true) {
     console.log("Time : ", dataE.time);
     if (dataE.type == "Token") {
       console.log("dataE.qtyIn : ", dataE.qtyIn);
-      if (dataE.qtyIn != null && dataE.qtyIn != 0 && dataE.qtyIn < 0.1) {
-        let dataSend = await sendData(prop.name, dataE);
-        lineSendMessage(dataSend);
+      if (dataE.qtyIn != null && dataE.qtyIn > 1) {
+        let dataSend = await sendData("data export:", dataE);
+        //lineSendMessage(dataSend);
         console.log("");
       } else console.log("QTY IN = 0 is not sawp transaction...");
     } else {
       console.log("NFT message........");
-      let dataSend = await sendDataNFT('test', dataE);
-      lineSendMessage(dataSend);
+      let dataSend = await sendDataNFT("test", dataE);
+      //lineSendMessageNFT(dataSend);
       console.log("");
-    } console.log("");
-  } console.log("");
+    }
+    console.log("");
+  }
+  console.log("");
 })();
 
 //https://solscan.io/tx/4W969229oSi8xpiUyUN8QWqLrX4NBJJpa8P6Rz6erwUgZ2ko2f3cQDweBYoLNmSrTeERzxDLVtx6Zb2N1TUKz1jb
