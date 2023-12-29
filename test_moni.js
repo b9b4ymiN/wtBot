@@ -40,8 +40,7 @@ const PROGRAM_ACCOUNT_URLS = {
   Hadeswap: "https://app.hadeswap.com/item/",
 };
 
-const endpoint =
-  "https://quiet-attentive-hexagon.solana-mainnet.quiknode.pro/208df33f2dae1636a4bd50fdb510d37e4171d6b2/";
+const endpoint = "https://agace-p8zi4t-fast-mainnet.helius-rpc.com/";
 const solanaConnection = new solanaWeb3.Connection(endpoint);
 const lstWallet = require("./wallet.json");
 const wallet_Fip = "FLiPggWYQyKVTULFWMQjAk26JfK5XRCajfyTmD5weaZ7";
@@ -171,7 +170,7 @@ const inferMarketPlace = async (accountKeys) => {
     }
   }
   return null;
-}; 
+};
 
 const getTransaction = async (txn, wallet) => {
   try {
@@ -430,17 +429,17 @@ const inferTradeDirection = (
 
 (async () => {
   let dataE = await getTransaction(
-    "3cm4MkaSVL6WMuvKun51J3DGkZbsWbqkDcg5PcqpFBzFFkz2kKYx3FiuBxuRKqAnWctnEm7VcQMmtaAUVetETSsk",
-    "EAHJNfFDtivTMzKMNXzwAF9RTAeTd4aEYVwLjCiQWY1E"
+    "3xRRdGU8nz4exzK9gkiA17wC1nhgCvHuTAo7vQo5X97ha8LnsTZAnQYJBbxe4erksVcXcFBNskZ2JbkakKVUpPVB",
+    "HenkBtb3i6qFxxrsKoeY7ge6fY96ofhsK84gxkBUKaNo"
   );
 
   if (dataE != null && dataE.error != true) {
     console.log("Time : ", dataE.time);
     if (dataE.type == "Token") {
       console.log("dataE.qtyIn : ", dataE.qtyIn);
-      if (dataE.qtyIn != null && dataE.qtyIn > 1) {
+      if (dataE.qtyIn != null && Math.abs(dataE.qtyIn) > 1) {
         let dataSend = await sendData("data export:", dataE);
-        //lineSendMessage(dataSend);
+        lineSendMessage(dataSend);
         console.log("");
       } else console.log("QTY IN = 0 is not sawp transaction...");
     } else {

@@ -466,7 +466,7 @@ function delay(time) {
         if (dataE != null && dataE.error != true) {
           console.log("Time : ", dataE.time);
           if (dataE.type == "Token") {
-            if (dataE.qtyIn != null && dataE.qtyIn > 1) {
+            if (dataE.qtyIn != null &&  Math.abs(dataE.qtyIn) > 1) {
               let dataSend = await sendData(prop.name, dataE);
               lineSendMessage(dataSend);
               console.log("");
