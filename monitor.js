@@ -360,7 +360,7 @@ const getTransaction = async (txn, wallet) => {
           data_export.qtyOut = outToken.tokenChange;
           data_export.tokenOut_info = outToken.token;
           data_export.tokenOut_info.address = outToken.address;
-        } else if (SPL_data != null && SPL_data.length > 1) {
+        } else if (SPL_data != null && SPL_data.length == 2) {
           console.log("SPL_data:", SPL_data);
           let inToken = Math.sign(
             SPL_data[0].tokenChange == 1 ? SPL_data[0] : SPL_data[1]
@@ -392,6 +392,9 @@ const getTransaction = async (txn, wallet) => {
             data_export.tokenOut_info = SPL_data[0].token;
             data_export.tokenOut_info.address = SPL_data[0].address;
           }
+        } else if (SPL_data != null && SPL_data.length > 2) {
+          console.error("txn : not swapping transaction.");
+          return null;
         } else {
           //Swap with SOL
           if (Math.sign(sol_data.solChange) == -1) {
@@ -466,7 +469,7 @@ function delay(time) {
         if (dataE != null && dataE.error != true) {
           console.log("Time : ", dataE.time);
           if (dataE.type == "Token") {
-            if (dataE.qtyIn != null &&  Math.abs(dataE.qtyIn) > 1) {
+            if (dataE.qtyIn != null && Math.abs(dataE.qtyIn) > 1) {
               let dataSend = await sendData(prop.name, dataE);
               lineSendMessage(dataSend);
               console.log("");

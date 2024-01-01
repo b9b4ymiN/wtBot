@@ -164,7 +164,7 @@ export async function swap() {
     poolKeys,
     new PublicKey("So11111111111111111111111111111111111111112"),
     new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
-    10000,
+    1,
     2
   );
 

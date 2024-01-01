@@ -12,7 +12,8 @@
     "bn.js": "^5.2.1",
     "coingecko-api-v3": "^0.0.29",
     "discord-webhook-node": "^1.1.8",
-    "request": "^2.88.2"
+    "request": "^2.88.2",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.5"
