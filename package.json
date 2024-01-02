@@ -10,6 +10,7 @@
     "@solana/web3.js": "^1.87.6",
     "axios": "^1.6.2",
     "bn.js": "^5.2.1",
+    "bs58": "^5.0.0",
     "coingecko-api-v3": "^0.0.29",
     "discord-webhook-node": "^1.1.8",
     "request": "^2.88.2",

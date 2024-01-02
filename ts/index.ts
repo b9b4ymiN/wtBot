@@ -1,4 +1,4 @@
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   TokenAccount,
@@ -12,6 +12,8 @@ import {
 import { OpenOrders } from "@project-serum/serum";
 import BN from "bn.js";
 import { compute } from "./compute";
+import { swapToken } from "./swap";
+import base58 from "bs58";
 
 const endpoint =
   "https://quiet-attentive-hexagon.solana-mainnet.quiknode.pro/208df33f2dae1636a4bd50fdb510d37e4171d6b2/";
@@ -162,10 +164,10 @@ export async function swap() {
   const computation: any = await compute(
     connection,
     poolKeys,
-    new PublicKey("So11111111111111111111111111111111111111112"),
-    new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
-    1,
-    2
+    poolKeys.baseMint,
+    poolKeys.quoteMint,
+    0.05, // qty_in
+    2 // sil
   );
 
   const amountOut = computation[0];
@@ -187,6 +189,22 @@ export async function swap() {
   } else {
     console.log(`\tpriceImpact: ${priceImpact.toFixed()}`);
   }
+
+  //Uint8Array
+  let secretKeyz = base58.decode("[base58 private key here]");
+  console.log(`[${Keypair.fromSecretKey(secretKeyz).secretKey}]`);
+
+  let KEYPAIRS: Keypair = Keypair.fromSecretKey(secretKeyz);
+  //start swap
+  const swap_result = await swapToken(
+    connection,
+    poolKeys,
+    KEYPAIRS,
+    amountIn,
+    minAmountOut
+  );
+
+  console.log("swap_result:", swap_result);
 }
 
 swap();

@@ -80,12 +80,11 @@ const getPoolInfo = async () => {
   ];
   // find the liquidity pair
   const poolKeysRaySolJson: LiquidityPoolJsonInfo =
-    allPoolKeysJson.filter(
-      (item) => item.baseMint === "DvEeyYPUPqmdSFHsAxPsuoneGZqyAZ2FRpsAGtGqYVJm"
-    )?.[0] || null;
+    allPoolKeysJson.filter((item) => item.baseMint === token_address)?.[0] ||
+    null;
   // convert the json info to pool key using jsonInfo2PoolKeys
   const raySolPk = jsonInfo2PoolKeys(poolKeysRaySolJson);
-  console.log(raySolPk);
+  console.log(raySolPk.id.toBase58());
 };
 
 getPoolInfo();

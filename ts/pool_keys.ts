@@ -1,5 +1,11 @@
-import { Liquidity, Market } from "@raydium-io/raydium-sdk";
+import {
+  Liquidity,
+  LiquidityPoolJsonInfo,
+  Market,
+  jsonInfo2PoolKeys,
+} from "@raydium-io/raydium-sdk";
 import { Connection, PublicKey } from "@solana/web3.js";
+import axios from "axios";
 
 //returns the pool keys (info and required params/program id's)
 //neccessary to interact with the liquidity pool program and compute live prices and estimates.
@@ -108,4 +114,28 @@ export async function fetchPoolKeys(
       marketEventQueue,
     },
   };
+}
+
+export async function getPoolID(token_address: string) {
+  try {
+    // fetch the liquidity pool list
+    const RAYDIUM_LIQUIDITY_JSON =
+      "https://api.raydium.io/v2/sdk/liquidity/mainnet.json";
+    const liquidityJsonResp = await axios.get(RAYDIUM_LIQUIDITY_JSON);
+    if (!(await liquidityJsonResp)) return [];
+    const liquidityJson = await liquidityJsonResp.data;
+    const allPoolKeysJson = [
+      ...(liquidityJson?.official ?? []),
+      ...(liquidityJson?.unOfficial ?? []),
+    ];
+    // find the liquidity pair
+    const poolKeysRaySolJson: LiquidityPoolJsonInfo =
+      allPoolKeysJson.filter((item) => item.baseMint === token_address)?.[0] ||
+      null;
+    // convert the json info to pool key using jsonInfo2PoolKeys
+    const raySolPk = jsonInfo2PoolKeys(poolKeysRaySolJson);
+    return raySolPk;
+  } catch (err) {
+    return null;
+  }
 }
