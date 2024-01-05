@@ -12,7 +12,7 @@ const {
 
 const endpoint = "https://agace-p8zi4t-fast-mainnet.helius-rpc.com/";
 const solanaConnection = new solanaWeb3.Connection(endpoint);
-const lstWallet = require("./wallet.json");
+const lstWallet = require("./wallet_NFT.json");
 
 const wallet_Fip = "FLiPggWYQyKVTULFWMQjAk26JfK5XRCajfyTmD5weaZ7";
 
@@ -187,7 +187,6 @@ const inferTradeDirection = (
   preTokenBalances,
   postTokenBalances
 ) => {
-
   const isListingInstruction = Boolean(
     logMessages.find(
       (message) =>
@@ -225,7 +224,6 @@ const inferTradeDirection = (
   if (isBuyInstruction) {
     return postTokenBalances[0].owner === wallet ? "BUY 💸" : "SELL 💰";
   }
-
 
   return "";
 };
