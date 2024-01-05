@@ -204,8 +204,8 @@ const sendData = async (name, data_export) => {
       "\n" +
       //Jup
       "Buy:" +
-      (data_export.tokenIn.includes("SOL") || 
-      data_export.tokenIn.includes("USD")
+      (data_export.tokenIn.includes("SOL") ||
+        data_export.tokenIn.includes("USD")
         ? buy_ray + data_export.tokenOut_info.address
         : buy_ray + data_export.tokenIn_info.address) +
       "\n" +
@@ -292,6 +292,7 @@ const lineSendMessage = async (msg) => {
         console.log(err);
       } else {
         console.log("Complete send message...");
+        console.log("");
       }
     }
   );
@@ -316,7 +317,8 @@ const lineSendMessageNFT = async (msg) => {
       if (err) {
         console.log(err);
       } else {
-        console.log("Complete send message...");
+        console.log("Complete send NFT message...");
+        console.log("");
       }
     }
   );

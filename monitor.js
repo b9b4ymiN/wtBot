@@ -262,8 +262,8 @@ const getTransaction = async (txn, wallet) => {
     let chkFip =
       transactionDetail != null
         ? transactionDetail.transaction.message.accountKeys.filter(
-            (x) => x.pubkey.toString() == wallet_Fip
-          )
+          (x) => x.pubkey.toString() == wallet_Fip
+        )
         : null;
     //console.log('chkFip : ', chkFip != null ? chkFip.length : 0);
 
@@ -315,9 +315,9 @@ const getTransaction = async (txn, wallet) => {
             postTokenBalances
           );
 
-          console.log("mintToken:", mintToken);
+          //console.log("mintToken:", mintToken);
           const metadata = await getTokenMeta(mintToken);
-          console.log("metadata:", metadata);
+          //console.log("metadata:", metadata);
           data_export.nftMeta = {
             name: metadata.name,
             tradeDirection,
@@ -472,18 +472,14 @@ function delay(time) {
             if (dataE.qtyIn != null && Math.abs(dataE.qtyIn) > 1) {
               let dataSend = await sendData(prop.name, dataE);
               lineSendMessage(dataSend);
-              console.log("");
             } else console.log("QTY IN = 0 is not sawp transaction...");
           } else {
             if (dataE.nftMeta != null && dataE.nftMeta.tradeDirection != "") {
               let dataSend = await sendDataNFT(prop.name, dataE);
               lineSendMessageNFT(dataSend);
-              console.log("");
             } else console.log("tradeDirection is not clear....");
           }
-          console.log("");
         }
-        console.log("");
       },
       "finalized"
     );
