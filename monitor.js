@@ -187,7 +187,7 @@ const inferTradeDirection = (
   preTokenBalances,
   postTokenBalances
 ) => {
-  //console.log('log ', logMessages)
+
   const isListingInstruction = Boolean(
     logMessages.find(
       (message) =>
@@ -225,6 +225,8 @@ const inferTradeDirection = (
   if (isBuyInstruction) {
     return postTokenBalances[0].owner === wallet ? "BUY 💸" : "SELL 💰";
   }
+
+
   return "";
 };
 
@@ -315,7 +317,7 @@ const getTransaction = async (txn, wallet) => {
             postTokenBalances
           );
 
-          //console.log("mintToken:", mintToken);
+          console.log("mintToken:", mintToken);
           const metadata = await getTokenMeta(mintToken);
           //console.log("metadata:", metadata);
           data_export.nftMeta = {
@@ -443,6 +445,7 @@ const getTransaction = async (txn, wallet) => {
 function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
+
 (async () => {
   const wallet_list = lstWallet;
 

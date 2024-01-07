@@ -231,7 +231,7 @@ const sendDataNFT = async (name, data_export) => {
           marketPlaceURL: `${marketPlaceNFT.url}/${mintToken}`,
        */
     if (data_export.nftMeta != null) {
-      let dataMeta = await getImage(data_export.nftMeta.image);
+      //let dataMeta = await getImage(data_export.nftMeta.image);
       const cgc = new CoinGeckoClient.CoinGeckoClient({ autoRetry: true });
       const solanaPrice = await cgc.simplePrice({
         vs_currencies: "usd",
@@ -253,16 +253,17 @@ const sendDataNFT = async (name, data_export) => {
         "\n" +
         "Price : " +
         data_export.nftMeta.price.toFixed(2) +
-        "◎\n" +
+        "◎" + "\nUSD:" + priceUSD.toFixed(2) +
         "\n" +
         "External Link\n" +
         "mk : " +
         data_export.nftMeta.marketPlaceURL +
         "\n" +
-        "txn : " +
-        data_export.txn_link +
+        "wallet : " +
+        ("https://www.tensor.trade/portfolio?wallet=" + data_export.wallet_address) +
         "\n";
       return message;
+      //wallet_address
     } else {
       return "";
     }

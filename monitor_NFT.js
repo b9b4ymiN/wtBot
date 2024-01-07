@@ -10,7 +10,6 @@ const {
   metadata: { Metadata },
 } = programs;
 
-//TS import
 const {
   InferTradeDirection,
   InferMarketPlace
@@ -258,7 +257,6 @@ const getTransaction = async (txn, wallet) => {
       if (NFTmarketPlace != null) {
         data_export.market = NFTmarketPlace;
         data_export.type = "NFT";
-
         let mintToken = postTokenBalances[0]?.mint;
         if (mintToken == null || mintToken == undefined) {
           if (staticAccountKeys != null && staticAccountKeys.length != 0)
@@ -276,7 +274,6 @@ const getTransaction = async (txn, wallet) => {
             sol_data,
             postTokenBalances
           );
-          console.log('tradeDirection :', tradeDirection)
           try {
             const metadata = await getTokenMeta(mintToken);
             data_export.nftMeta = {
@@ -289,7 +286,7 @@ const getTransaction = async (txn, wallet) => {
             };
           } catch {
             data_export.nftMeta = {
-              name: "SPL Token",
+              name: "SPL NFT",
               tradeDirection,
               price: price,
               image: "",
@@ -415,29 +412,45 @@ function delay(time) {
 }
 
 (async () => {
-  let dataE = await getTransaction(
-    "3v48jgWZwvjviFvD8p1qtg4ah5YQj2NoYwDPVfp7Dui8Ehy6hg6G5BNxaVSFN7bG9Sym6MMtQR1Ck7cZtwzJs9sD",
-    "7uDbbhSke7FhKauPKKLS5cgtzRmX12WN1xpRZ5xKsFL9"
-  );
+  const wallet_list = lstWallet;
 
-  if (dataE != null && dataE.error != true) {
-    console.log("Time : ", dataE.time);
-    if (dataE.type == "Token") {
-      console.log("dataE.qtyIn : ", dataE.qtyIn);
-      if (dataE.qtyIn != null && Math.abs(dataE.qtyIn) > 1) {
-        let dataSend = await sendData("data export:", dataE);
-        lineSendMessage(dataSend);
-        console.log("");
-      } else console.log("QTY IN = 0 is not sawp transaction...");
-    } else {
-      console.log("NFT message........");
-      let dataSend = await sendDataNFT("test", dataE);
-      lineSendMessageNFT(dataSend);
-      console.log("");
-    }
-    console.log("");
-  }
-  console.log("");
+  wallet_list.forEach((prop, index) => {
+    const pubKey = new solanaWeb3.PublicKey(prop.address);
+    console.log(
+      "start wallet [" + (index + 1) + "] " + prop.name + " : ",
+      prop.address
+    );
+    solanaConnection.onAccountChange(
+      new solanaWeb3.PublicKey(pubKey),
+      async (updatedAccountInfo, context) => {
+        await delay(3000);
+        const signatures = await solanaConnection.getSignaturesForAddress(
+          pubKey,
+          { limit: 1 },
+          "finalized"
+        );
+        signatures.forEach((x) => {
+          console.log(prop.name + " actived..");
+          console.log("link : ", "https://solscan.io/tx/" + x.signature);
+        });
+        let dataE = await getTransaction(signatures[0].signature, prop.address);
+        if (dataE != null && dataE.error != true) {
+          console.log("Time : ", dataE.time);
+          if (dataE.type == "Token") {
+            if (dataE.qtyIn != null && Math.abs(dataE.qtyIn) > 1) {
+              let dataSend = await sendData(prop.name, dataE);
+              lineSendMessage(dataSend);
+            } else console.log("QTY IN = 0 is not sawp transaction...");
+          } else {
+            if (dataE.nftMeta != null && dataE.nftMeta.tradeDirection != "") {
+              let dataSend = await sendDataNFT(prop.name, dataE);
+              lineSendMessageNFT(dataSend);
+            } else console.log("tradeDirection is not clear....");
+          }
+        }
+        console.log("================================================")
+      },
+      "finalized"
+    );
+  });
 })();
-
-//https://solscan.io/tx/4W969229oSi8xpiUyUN8QWqLrX4NBJJpa8P6Rz6erwUgZ2ko2f3cQDweBYoLNmSrTeERzxDLVtx6Zb2N1TUKz1jb
